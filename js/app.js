@@ -386,7 +386,9 @@
   }
   function showArchived(){
     const items=state.exercises.filter(e=>e.archived);
-    showModal('Архив упражнений','Архивные упражнения не отображаются в подборе, но история сохраняется.',items.length?items.map(e=>`<div class="list-item"><div class="list-main"><b class="list-title">${U.esc(e.name)}</b><div class="list-meta">${U.esc((e.muscles||[]).join(' · '))}</div></div><button class="btn ghost small-btn" data-action="restore-exercise" data-id="${e.id}">Вернуть</button><button class="icon-button" data-action="delete-exercise-permanent" data-id="${e.id}" title="Удалить навсегда">${U.icon('trash',15)}</button></div>`).join(''):empty('archive','Архив пуст','Архивированные упражнения появятся з  function measurementForm(m=null){
+    showModal('Архив упражнений','Архивные упражнения не отображаются в подборе, но история сохраняется.',items.length?items.map(e=>`<div class="list-item"><div class="list-main"><b class="list-title">${U.esc(e.name)}</b><div class="list-meta">${U.esc((e.muscles||[]).join(' · '))}</div></div><button class="btn ghost small-btn" data-action="restore-exercise" data-id="${e.id}">Вернуть</button><button class="icon-button" data-action="delete-exercise-permanent" data-id="${e.id}" title="Удалить навсегда">${U.icon('trash',15)}</button></div>`).join(''):empty('archive','Архив пуст','Архивированные упражнения появятся здесь.'));
+  }
+  function measurementForm(m=null){
     const types=[...Object.entries(measureNames),...new Set(state.measurements.filter(x=>!measureNames[x.type]).map(x=>x.type)).map(v=>[v,v])];
     const typeOpts=types.map(([v,l])=>`<option value="${U.esc(v)}" ${m?.type===v?'selected':''}>${U.esc(l)}</option>`).join('');
     showModal(m?'Изменить замер':'Новый замер','Вес — в килограммах, остальные параметры — в сантиметрах.',`<form id="measurement-form" novalidate>
@@ -633,8 +635,7 @@
   document.addEventListener('input',ev=>handleInput(ev.target));
   document.addEventListener('submit',ev=>{
     const id=ev.target.id;
-    if(['exercise-form','block-form','program-form','add-session-form','body-goal-form','lift-goal-form','history-edit-form'].includes(id))ev.preventDefault();
-    if(id==='measurement-form')saveMeasurementForm();
+    if(['exercise-form','block-form','program-form','add-session-form','measurement-form','body-goal-form','lift-goal-form','history-edit-form'].includes(id))ev.preventDefault();
   });
   if(window.matchMedia){const media=window.matchMedia('(prefers-color-scheme: dark)');media.addEventListener?.('change',()=>{if(state?.settings?.theme==='system')U.setTheme('system');});}
   window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();installPrompt=ev;});
