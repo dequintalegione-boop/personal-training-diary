@@ -1,5 +1,5 @@
 /* Versioned cache-first service worker. Personal data stays in IndexedDB, outside Cache Storage. */
-const CACHE_NAME = 'personal-training-diary-v1.1.0';
+const CACHE_NAME = 'personal-training-diary-v1.1.1';
 const BASE = new URL('./', self.registration.scope);
 const PRECACHE = [
   './', './index.html', './manifest.webmanifest', './css/styles.css',
