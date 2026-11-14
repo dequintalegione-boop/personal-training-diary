@@ -1,0 +1,39 @@
+{
+  "format": "personal-training-diary-coach-plan",
+  "version": 1,
+  "generatedAt": "2026-11-15T00:00:00.000Z",
+  "coachNote": "Обезличенный пример двухдневной программы. Весовые значения намеренно не заданы.",
+  "exercises": [
+    {"id":"barbell-bench-press","name":"Жим штанги лёжа","muscles":["Грудь","Трицепс","Плечи"],"equipment":"Штанга","stepKg":2.5,"restSeconds":150,"note":"Контролируемая амплитуда, устойчивые лопатки"},
+    {"id":"lat-pulldown","name":"Тяга верхнего блока","muscles":["Спина","Бицепс"],"equipment":"Блок","stepKg":2.5,"restSeconds":120,"note":"Не раскачивать корпус"},
+    {"id":"dumbbell-shoulder-press","name":"Жим гантелей сидя","muscles":["Плечи","Трицепс"],"equipment":"Гантели","stepKg":1,"restSeconds":120,"note":"Комфортная амплитуда"},
+    {"id":"cable-triceps-pushdown","name":"Разгибание рук на блоке","muscles":["Трицепс"],"equipment":"Блок","stepKg":2.5,"restSeconds":75,"note":"Локти стабильно"},
+    {"id":"goblet-squat","name":"Присед с гантелью","muscles":["Квадрицепс","Ягодицы"],"equipment":"Гантели","stepKg":2.5,"restSeconds":150,"note":"Контроль положения корпуса"},
+    {"id":"romanian-deadlift-dumbbell","name":"Румынская тяга с гантелями","muscles":["Бицепс бедра","Ягодицы","Спина"],"equipment":"Гантели","stepKg":2.5,"restSeconds":150,"note":"Движение в тазобедренном суставе"},
+    {"id":"leg-curl-machine","name":"Сгибание ног в тренажёре","muscles":["Бицепс бедра"],"equipment":"Тренажёр","stepKg":2.5,"restSeconds":90,"note":"Без рывков"},
+    {"id":"standing-calf-raise","name":"Подъём на носки","muscles":["Икры"],"equipment":"Тренажёр","stepKg":2.5,"restSeconds":75,"note":"Пауза в верхней точке"}
+  ],
+  "blocks": [
+    {"id":"upper-accessories-v1","name":"Аксессуары верха тела","note":"Пример компактного блока.","items":[
+      {"exerciseId":"dumbbell-shoulder-press","sets":3,"repsMin":8,"repsMax":12,"warmupSets":0},
+      {"exerciseId":"cable-triceps-pushdown","sets":3,"repsMin":10,"repsMax":15,"warmupSets":0}
+    ]}
+  ],
+  "programs": [
+    {"id":"sample-upper-lower-v1","name":"Пример: Верх / Низ","description":"Обезличенный пример. Перед использованием согласуйте объём с тренером.","days":[
+      {"id":"upper-day-a","name":"День А — Верх тела","weekday":1,"exercises":[
+        {"exerciseId":"barbell-bench-press","sets":3,"repsMin":6,"repsMax":8,"startingWeightKg":null,"warmupSets":2},
+        {"exerciseId":"lat-pulldown","sets":3,"repsMin":8,"repsMax":12,"startingWeightKg":null,"warmupSets":1},
+        {"exerciseId":"dumbbell-shoulder-press","sets":3,"repsMin":8,"repsMax":12,"startingWeightKg":null,"warmupSets":1},
+        {"exerciseId":"cable-triceps-pushdown","sets":2,"repsMin":10,"repsMax":15,"startingWeightKg":null,"warmupSets":0}
+      ]},
+      {"id":"lower-day-b","name":"День Б — Низ тела","weekday":4,"exercises":[
+        {"exerciseId":"goblet-squat","sets":3,"repsMin":8,"repsMax":12,"startingWeightKg":null,"warmupSets":1},
+        {"exerciseId":"romanian-deadlift-dumbbell","sets":3,"repsMin":8,"repsMax":10,"startingWeightKg":null,"warmupSets":1},
+        {"exerciseId":"leg-curl-machine","sets":3,"repsMin":10,"repsMax":15,"startingWeightKg":null,"warmupSets":0},
+        {"exerciseId":"standing-calf-raise","sets":3,"repsMin":12,"repsMax":15,"startingWeightKg":null,"warmupSets":0}
+      ]}
+    ]}
+  ],
+  "liftGoals": []
+}
