@@ -1,17 +1,20 @@
-/* Loads the same-origin compressed application bundle without third-party code. */
+/* Loads the same-origin compressed runtime split into text chunks for GitHub Pages. */
 (async function () {
   try {
-    if (!('DecompressionStream' in window)) throw new Error('Этот браузер не поддерживает распаковку локального пакета приложения.');
-    const response = await fetch('./js/app.js.gz');
-    if (!response.ok) throw new Error('Не удалось загрузить модуль приложения.');
-    const compressed = await response.arrayBuffer();
-    const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
+    if (!('DecompressionStream' in window)) throw new Error('Браузер не поддерживает распаковку локального пакета приложения.');
+    const names = ['00','01','02','03','04','05'];
+    const responses = await Promise.all(names.map(name => fetch('./js/app-boot-' + name + '.txt')));
+    if (responses.some(r => !r.ok)) throw new Error('Не удалось загрузить все части приложения.');
+    const encoded = (await Promise.all(responses.map(r => r.text()))).join('').trim();
+    const binary = atob(encoded);
+    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
     const source = await new Response(stream).text();
-    const scriptUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+    const url = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
     const script = document.createElement('script');
-    script.src = scriptUrl;
-    script.onload = () => URL.revokeObjectURL(scriptUrl);
-    script.onerror = () => { URL.revokeObjectURL(scriptUrl); throw new Error('Не удалось запустить приложение.'); };
+    script.src = url;
+    script.onload = () => URL.revokeObjectURL(url);
+    script.onerror = () => { URL.revokeObjectURL(url); throw new Error('Не удалось запустить приложение.'); };
     document.body.appendChild(script);
   } catch (error) {
     console.error(error);
