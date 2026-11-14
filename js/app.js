@@ -389,10 +389,19 @@
     showModal('Архив упражнений','Архивные упражнения не отображаются в подборе, но история сохраняется.',items.length?items.map(e=>`<div class="list-item"><div class="list-main"><b class="list-title">${U.esc(e.name)}</b><div class="list-meta">${U.esc((e.muscles||[]).join(' · '))}</div></div><button class="btn ghost small-btn" data-action="restore-exercise" data-id="${e.id}">Вернуть</button><button class="icon-button" data-action="delete-exercise-permanent" data-id="${e.id}" title="Удалить навсегда">${U.icon('trash',15)}</button></div>`).join(''):empty('archive','Архив пуст','Архивированные упражнения появятся з  function measurementForm(m=null){
     const types=[...Object.entries(measureNames),...new Set(state.measurements.filter(x=>!measureNames[x.type]).map(x=>x.type)).map(v=>[v,v])];
     const typeOpts=types.map(([v,l])=>`<option value="${U.esc(v)}" ${m?.type===v?'selected':''}>${U.esc(l)}</option>`).join('');
-    showModal(m?'Изменить замер':'Новый замер','Вес — в килограммах, остальные параметры — в сантиметрах.',`<form id="measurement-form" novalidate><input type="hidden" name="id" value="${m?.id||''}"><div class="form-grid"><div class="field"><label>Показатель</label><select name="type" class="select">${typeOpts}<option value="custom">Свой замер…</option></select></div><div class="field"><label>Дата</label><input type="date" name="date" required class="input" value="${m?.date||U.localDate()}"></div><div class="field full ${m&&!measureNames[m.type]?'':'hidden'}" id="custom-measure-field"><label>Название своего замера</label><input name="customName" class="input" value="${U.esc(m&&!measureNames[m.type]?m.type:'')}" placeholder="Например, Запястье"></div><div class="field"><label>Значение <span data-measure-unit>${m?.unit||(m?.type==='weight'?'кг':'см')}</span></label><input type="number" min="0" step="0.1" required name="value" class="input" value="${m?.value??''}" placeholder="0"></div><div class="field"><label>Заметка</label><input name="note" class="input" maxlength="120" value="${U.esc(m?.note||'')}" placeholder="Необязательно"></div></div><div style="margin-top:14px"><button type="button" class="btn primary block" data-action="submit-measurement">Сохранить замер</button></div></form>`,`<button type="button" class="btn secondary" data-action="close-modal">Отмена</button>`);
+    showModal(m?'Изменить замер':'Новый замер','Вес — в килограммах, остальные параметры — в сантиметрах.',`<form id="measurement-form" novalidate>
+      <input type="hidden" name="id" value="${m?.id||''}">
+      <div class="form-grid">
+        <div class="field"><label for="measurement-type">Показатель</label><select id="measurement-type" name="type" class="select">${typeOpts}<option value="custom">Свой замер…</option></select></div>
+        <div class="field"><label for="measurement-date">Дата</label><input id="measurement-date" type="date" name="date" required class="input" value="${m?.date||U.localDate()}"></div>
+        <div class="field full ${m&&!measureNames[m.type]?'':'hidden'}" id="custom-measure-field"><label for="measurement-custom-name">Название своего замера</label><input id="measurement-custom-name" name="customName" class="input" value="${U.esc(m&&!measureNames[m.type]?m.type:'')}" placeholder="Например, Запястье"></div>
+        <div class="field"><label for="measurement-value">Значение <span data-measure-unit>${m?.unit||(m?.type==='weight'?'кг':'см')}</span></label><input id="measurement-value" type="number" min="0.1" step="0.1" required name="value" class="input" value="${m?.value??''}" placeholder="0"></div>
+        <div class="field"><label for="measurement-note">Заметка</label><input id="measurement-note" name="note" class="input" maxlength="120" value="${U.esc(m?.note||'')}" placeholder="Необязательно"></div>
+      </div>
+      <div style="margin-top:14px"><button type="button" class="btn primary block" data-action="submit-measurement">Сохранить замер</button></div>
+    </form>`,`<button type="button" class="btn secondary" data-action="close-modal">Отмена</button>`);
     const form=$('#measurement-form',modalRoot);
     form?.addEventListener('submit',ev=>{ev.preventDefault();saveMeasurementForm();});
-  }button>`);
   }
   function bodyGoalForm(){const g=state.goals.bodyWeight||{};const cur=latestMeasurement('weight');showModal('Цель по весу тела','Задайте ориентир и срок — приложение покажет разницу с последней записью.',`<form id="body-goal-form"><div class="form-grid"><div class="field"><label>Целевой вес, кг</label><input class="input" type="number" name="targetValue" min="1" step="0.1" required value="${g.targetValue??''}" placeholder="Например, 80"></div><div class="field"><label>Текущий вес, кг</label><input class="input" type="number" name="startValue" min="1" step="0.1" value="${g.startValue??cur?.value??''}" placeholder="Необязательно"></div><div class="field"><label>Срок достижения</label><input class="input" type="date" name="deadline" value="${g.deadline||''}"></div><div class="field"><label>Заметка</label><input class="input" name="note" maxlength="120" value="${U.esc(g.note||'')}"></div></div></form>`,`<button class="btn secondary" data-action="close-modal">Отмена</button><button class="btn primary" data-action="submit-body-goal">Сохранить цель</button>`);}
   function liftGoalForm(){if(!state.exercises.length){U.toast('Сначала создайте упражнения');return;}showModal('Цель по рабочему весу','Прогресс рассчитывается по максимальному записанному рабочему подходу.',`<form id="lift-goal-form"><div class="field"><label>Упражнение</label><select name="exerciseId" class="select" required>${state.exercises.filter(e=>!e.archived).map(e=>`<option value="${e.id}">${U.esc(e.name)}</option>`).join('')}</select></div><div class="form-grid" style="margin-top:12px"><div class="field"><label>Целевой вес, кг</label><input name="targetValue" class="input" type="number" min="0.1" step="0.5" required></div><div class="field"><label>Повторы</label><input name="targetReps" class="input" type="number" min="1" max="100" value="1"></div><div class="field full"><label>Срок</label><input name="deadline" class="input" type="date"></div></div></form>`,`<button class="btn secondary" data-action="close-modal">Отмена</button><button class="btn primary" data-action="submit-lift-goal">Сохранить цель</button>`);}
@@ -415,24 +424,44 @@
   function saveBlockForm(){const f=$('#block-form');if(!f?.reportValidity())return;const fd=new FormData(f),ids=fd.getAll('pickedExercises');if(!ids.length){U.toast('Выберите хотя бы одно упражнение');return;}state.blocks.push({id:U.uid('block'),name:String(fd.get('name')).trim(),items:ids.map(id=>({exerciseId:id,sets:Number(fd.get('sets'))||3,repsMin:Number(fd.get('repsMin'))||8,repsMax:Number(fd.get('repsMax'))||12})),createdAt:new Date().toISOString()});closeModal();save(true);exerciseMode='blocks';tab='exercises';render();U.toast('Блок создан','success');}
   function saveProgramForm(){const f=$('#program-form');if(!f?.reportValidity())return;const fd=new FormData(f),ids=fd.getAll('pickedExercises');if(!ids.length){U.toast('Выберите упражнения для дня');return;}const items=ids.map(id=>({exerciseId:id,sets:Number(fd.get('sets'))||3,repsMin:Number(fd.get('repsMin'))||8,repsMax:Number(fd.get('repsMax'))||12}));const pId=fd.get('programId');let program=state.programs.find(p=>p.id===pId);if(!program){program={id:U.uid('program'),name:String(fd.get('name')).trim(),days:[],createdAt:new Date().toISOString()};state.programs.push(program);}else if(fd.get('name'))program.name=String(fd.get('name')).trim();program.days.push({id:U.uid('day'),name:String(fd.get('dayName')).trim()||'Тренировочный день',weekday:Number(fd.get('weekday')),items});closeModal();save(true);exerciseMode='programs';tab='exercises';render();U.toast('День программы сохранён','success');}
   function saveMeasurementForm(){
-    const f=$('#measurement-form');
-    if(!f){U.toast('Форма замера не найдена. Закройте окно и попробуйте ещё раз.','error');return;}
+    const f=$('#measurement-form',modalRoot);
+    if(!f){U.toast('Не удалось найти форму замера. Закройте окно и откройте его снова.','error');return;}
+    const field=name=>f.elements.namedItem(name);
+    const typeField=field('type'),dateField=field('date'),valueField=field('value'),customField=field('customName');
+    let type=String(typeField?.value||'');
+    if(type==='custom')type=String(customField?.value||'').trim();
+    const date=String(dateField?.value||'');
+    const value=Number(valueField?.value);
+    if(!type){U.toast('Укажите показатель или название своего замера','error');customField?.focus();return;}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(value)||value<=0){
+      U.toast('Введите корректную дату и значение больше нуля','error');
+      if(!dateField?.value)dateField?.focus();else valueField?.focus();
+      return;
+    }
     if(!f.reportValidity())return;
-    const fd=new FormData(f);
-    let type=String(fd.get('type')||'');
-    if(type==='custom')type=String(fd.get('customName')||'').trim();
-    const date=String(fd.get('date')||'');
-    const value=Number(fd.get('value'));
-    if(!type){U.toast('Укажите название замера','error');return;}
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(value)||value<0){U.toast('Проверьте дату и значение замера','error');return;}
-    const existingId=String(fd.get('id')||'');
+    const existingId=String(field('id')?.value||'');
     const existing=existingId?state.measurements.find(m=>m.id===existingId):null;
-    const item={id:existing?.id||U.uid('measurement'),date,type,value,unit:type==='weight'?'кг':'см',note:String(fd.get('note')||'').trim(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+    const before=existing?{...existing}:null;
+    const item={id:existing?.id||U.uid('measurement'),date,type,value,unit:type==='weight'?'кг':'см',note:String(field('note')?.value||'').trim(),createdAt:existing?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
     if(existing)Object.assign(existing,item);else state.measurements.push(item);
+    const previousMetric=bodyMetric;
     bodyMetric=type;
     calculateAchievements();
-    closeModal();
-    save(true).then(()=>{tab='body';render();U.toast(existing?'Замер обновлён':'Замер сохранён','success');}).catch(()=>{});
+    const saveButton=$('[data-action="submit-measurement"]',modalRoot);
+    if(saveButton){saveButton.disabled=true;saveButton.textContent='Сохраняем…';}
+    save(true).then(()=>{
+      closeModal();
+      tab='body';
+      render();
+      U.toast(existing?'Замер обновлён':'Замер сохранён','success');
+    }).catch(error=>{
+      if(existing&&before)Object.assign(existing,before);
+      else state.measurements=state.measurements.filter(m=>m.id!==item.id);
+      bodyMetric=previousMetric;
+      calculateAchievements();
+      if(saveButton){saveButton.disabled=false;saveButton.textContent='Сохранить замер';}
+      U.toast(error?.message||'Не удалось сохранить замер. Проверьте свободное место в браузере.','error');
+    });
   }
   function saveBodyGoal(){const f=$('#body-goal-form');if(!f?.reportValidity())return;const fd=new FormData(f);state.goals.bodyWeight={targetValue:Number(fd.get('targetValue')),startValue:Number(fd.get('startValue'))||null,startDate:U.localDate(),deadline:fd.get('deadline')||'',note:String(fd.get('note')||'').trim()};closeModal();save(true);render();U.toast('Цель сохранена','success');}
   function saveLiftGoal(){const f=$('#lift-goal-form');if(!f?.reportValidity())return;const fd=new FormData(f),id=fd.get('exerciseId');state.goals.lifts.push({id:U.uid('goal'),exerciseId:id,exerciseName:exerciseName(id),targetValue:Number(fd.get('targetValue')),targetReps:Number(fd.get('targetReps'))||1,deadline:fd.get('deadline')||'',active:true});closeModal();save(true);render();U.toast('Цель добавлена','success');}
