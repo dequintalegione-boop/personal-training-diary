@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101114" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Тренировки">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Личный дневник тренировок. Записывайте подходы, отслеживайте рабочие веса и прогресс. Все данные хранятся только на устройстве.">
+  <meta property="og:title" content="Тренировки — личный дневник">
+  <meta property="og:description" content="Офлайн-дневник тренировок с историей, замерами и аналитикой.">
+  <meta property="og:type" content="website">
+  <title>Тренировки — личный дневник</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="topbar-copy"><span class="eyebrow">ЛИЧНЫЙ ДНЕВНИК</span><span class="topbar-title">Тренировки</span></div>
+      <button class="icon-button topbar-action" data-action="quick-add" aria-label="Быстрое действие" title="Быстрое действие"><span data-icon="plus"></span></button>
+    </header>
+    <main id="screen" class="screen" tabindex="-1" aria-live="polite"></main>
+    <nav class="tabbar" aria-label="Основная навигация">
+      <button class="tab-item is-active" data-tab="home"><span data-icon="house"></span><small>Главная</small></button>
+      <button class="tab-item" data-tab="workout"><span data-icon="dumbbell"></span><small>Тренировка</small></button>
+      <button class="tab-item" data-tab="history"><span data-icon="calendar"></span><small>История</small></button>
+      <button class="tab-item" data-tab="exercises"><span data-icon="list"></span><small>Упражнения</small></button>
+      <button class="tab-item" data-tab="progress"><span data-icon="chart"></span><small>Прогресс</small></button>
+      <button class="tab-item" data-tab="body"><span data-icon="body"></span><small>Тело</small></button>
+      <button class="tab-item" data-tab="profile"><span data-icon="user"></span><small>Профиль</small></button>
+    </nav>
+  </div>
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+  <script src="./js/db.js"></script>
+  <script src="./js/utils.js"></script>
+  <script src="./js/charts.js"></script>
+  <script src="./js/xlsx.js"></script>
+  <script src="./js/backup.js"></script>
+  <script src="./js/app-loader.js"></script>
+</body>
+</html>
