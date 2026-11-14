@@ -71,7 +71,6 @@
   function findSet(id){for(const e of currentWorkout()?.exercises||[]){const set=e.sets.find(s=>s.id===id);if(set)return {set,exercise:e};}return null;}
   function restSecondsFor(ex){return Number(findExercise(ex.exerciseId)?.rest)||Number(state.settings.restSeconds)||90;}
   function showModal(title,subtitle,content,buttons='') {
-    window.__measureTrace = {...(window.__measureTrace||{}), showModalCalled: (window.__measureTrace?.showModalCalled||0)+1};
     modalRoot.innerHTML=`<div class="modal-backdrop" data-action="backdrop-close"><section class="modal-sheet" role="dialog" aria-modal="true" aria-label="${U.esc(title)}"><div class="sheet-handle"></div><div class="modal-head"><div><h2>${U.esc(title)}</h2>${subtitle?`<p>${U.esc(subtitle)}</p>`:''}</div><button class="modal-close" data-action="close-modal" aria-label="Закрыть">×</button></div>${content}${buttons?`<div class="modal-actions">${buttons}</div>`:''}</section></div>`;
     const sheet=$('.modal-sheet',modalRoot); let startY=0;
     sheet.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;},{passive:true});
@@ -390,7 +389,6 @@
     showModal('Архив упражнений','Архивные упражнения не отображаются в подборе, но история сохраняется.',items.length?items.map(e=>`<div class="list-item"><div class="list-main"><b class="list-title">${U.esc(e.name)}</b><div class="list-meta">${U.esc((e.muscles||[]).join(' · '))}</div></div><button class="btn ghost small-btn" data-action="restore-exercise" data-id="${e.id}">Вернуть</button><button class="icon-button" data-action="delete-exercise-permanent" data-id="${e.id}" title="Удалить навсегда">${U.icon('trash',15)}</button></div>`).join(''):empty('archive','Архив пуст','Архивированные упражнения появятся здесь.'));
   }
   function measurementForm(m=null){
-    window.__measureTrace = {...(window.__measureTrace||{}), measurementFormCalled: (window.__measureTrace?.measurementFormCalled||0)+1};
     const types=[...Object.entries(measureNames),...new Set(state.measurements.filter(x=>!measureNames[x.type]).map(x=>x.type)).map(v=>[v,v])];
     const typeOpts=types.map(([v,l])=>`<option value="${U.esc(v)}" ${m?.type===v?'selected':''}>${U.esc(l)}</option>`).join('');
     showModal(m?'Изменить замер':'Новый замер','Вес — в килограммах, остальные параметры — в сантиметрах.',`<form id="measurement-form" novalidate>
@@ -499,7 +497,7 @@
       case 'quick-add':showModal('Быстрое действие','Выберите, что хотите добавить.',`<div class="stack"><button class="btn secondary block" data-action="quick-start">${U.icon('dumbbell')} Начать тренировку</button><button class="btn secondary block" data-action="quick-exercise">${U.icon('plus')} Добавить упражнение</button><button class="btn secondary block" data-action="quick-measure">${U.icon('scale')} Записать замер</button></div>`);break;
       case 'quick-start':closeModal();makeWorkout();break;
       case 'quick-exercise':closeModal();exerciseForm();break;
-      case 'quick-measure':window.__measureTrace={...(window.__measureTrace||{}), quickMeasureAction:true};closeModal();measurementForm();break;
+      case 'quick-measure':closeModal();measurementForm();break;
       case 'start-empty':makeWorkout();break;
       case 'start-plan':{const p=findTodayPlan();if(p)makeWorkout(p);else U.toast('На сегодня программа не назначена');break;}
       case 'start-program':{const p=state.programs.find(x=>x.id===el.dataset.program),d=p?.days.find(x=>x.id===el.dataset.day);if(p&&d)makeWorkout({program:p,day:d});break;}
@@ -558,7 +556,7 @@
       case 'select-history-date':historyDate=el.dataset.date;render();break;
       case 'clear-history-date':historyDate='';render();break;
       case 'progress-period':progressPeriod=el.dataset.period;render();break;
-      case 'add-measurement':window.__measureTrace={...(window.__measureTrace||{}), addMeasurementAction:true};measurementForm();break;
+      case 'add-measurement':measurementForm();break;
       case 'submit-measurement':saveMeasurementForm();break;
       case 'measurement-menu':{const m=state.measurements.find(x=>x.id===id);if(!m)return;showModal(measureNames[m.type]||m.type,U.fmtDate(m.date),`<div class="stack"><button class="btn secondary block" data-action="edit-measurement" data-id="${id}">${U.icon('edit')} Изменить</button><button class="btn danger block" data-action="delete-measurement" data-id="${id}">${U.icon('trash')} Удалить</button></div>`);break;}
       case 'edit-measurement':measurementForm(state.measurements.find(x=>x.id===id));break;
