@@ -392,14 +392,14 @@
     if(!state)throw new Error('Данные дневника ещё не загружены');
     if(!Array.isArray(state.measurements))state.measurements=[];
     const types=[...Object.entries(measureNames),...new Set(state.measurements.filter(x=>!measureNames[x.type]).map(x=>x.type))].map(v=>Array.isArray(v)?v:[v,v]);
-    const typeOpts=types.map(([v,l])=>`<option value="${U.esc(v)}" ${m?.type===v?'selected':''}>${U.esc(l)}</option>`).join('');
+    const typeOpts=types.map(([v,l])=>`<option value="${U.esc(v)}" ${((m?.type)||(!m&&'weight'))===v?'selected':''}>${U.esc(l)}</option>`).join('');
     showModal(m?'Изменить замер':'Новый замер','Вес — в килограммах, остальные параметры — в сантиметрах.',`<form id="measurement-form" novalidate>
       <input type="hidden" name="id" value="${m?.id||''}">
       <div class="form-grid">
         <div class="field"><label for="measurement-type">Показатель</label><select id="measurement-type" name="type" class="select">${typeOpts}<option value="custom">Свой замер…</option></select></div>
         <div class="field"><label for="measurement-date">Дата</label><input id="measurement-date" type="date" name="date" required class="input" value="${m?.date||U.localDate()}"></div>
         <div class="field full ${m&&!measureNames[m.type]?'':'hidden'}" id="custom-measure-field"><label for="measurement-custom-name">Название своего замера</label><input id="measurement-custom-name" name="customName" class="input" value="${U.esc(m&&!measureNames[m.type]?m.type:'')}" placeholder="Например, Запястье"></div>
-        <div class="field"><label for="measurement-value">Значение <span data-measure-unit>${m?.unit||(m?.type==='weight'?'кг':'см')}</span></label><input id="measurement-value" type="number" min="0.1" step="0.1" required name="value" class="input" value="${m?.value??''}" placeholder="0"></div>
+        <div class="field"><label for="measurement-value">Значение <span data-measure-unit>${m?.unit||((m?.type||'weight')==='weight'?'кг':'см')}</span></label><input id="measurement-value" type="number" min="0.1" step="0.1" required name="value" class="input" value="${m?.value??''}" placeholder="0"></div>
         <div class="field"><label for="measurement-note">Заметка</label><input id="measurement-note" name="note" class="input" maxlength="120" value="${U.esc(m?.note||'')}" placeholder="Необязательно"></div>
       </div>
       <div style="margin-top:14px"><button type="button" class="btn primary block" data-action="submit-measurement">Сохранить замер</button></div>
