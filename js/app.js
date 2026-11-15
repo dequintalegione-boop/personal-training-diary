@@ -389,7 +389,9 @@
     showModal('Архив упражнений','Архивные упражнения не отображаются в подборе, но история сохраняется.',items.length?items.map(e=>`<div class="list-item"><div class="list-main"><b class="list-title">${U.esc(e.name)}</b><div class="list-meta">${U.esc((e.muscles||[]).join(' · '))}</div></div><button class="btn ghost small-btn" data-action="restore-exercise" data-id="${e.id}">Вернуть</button><button class="icon-button" data-action="delete-exercise-permanent" data-id="${e.id}" title="Удалить навсегда">${U.icon('trash',15)}</button></div>`).join(''):empty('archive','Архив пуст','Архивированные упражнения появятся здесь.'));
   }
   function measurementForm(m=null){
-    const types=[...Object.entries(measureNames),...new Set(state.measurements.filter(x=>!measureNames[x.type]).map(x=>x.type)).map(v=>[v,v])];
+    if(!state)throw new Error('Данные дневника ещё не загружены');
+    if(!Array.isArray(state.measurements))state.measurements=[];
+    const types=[...Object.entries(measureNames),...new Set(state.measurements.filter(x=>!measureNames[x.type]).map(x=>x.type))].map(v=>Array.isArray(v)?v:[v,v]);
     const typeOpts=types.map(([v,l])=>`<option value="${U.esc(v)}" ${m?.type===v?'selected':''}>${U.esc(l)}</option>`).join('');
     showModal(m?'Изменить замер':'Новый замер','Вес — в килограммах, остальные параметры — в сантиметрах.',`<form id="measurement-form" novalidate>
       <input type="hidden" name="id" value="${m?.id||''}">
@@ -556,7 +558,7 @@
       case 'select-history-date':historyDate=el.dataset.date;render();break;
       case 'clear-history-date':historyDate='';render();break;
       case 'progress-period':progressPeriod=el.dataset.period;render();break;
-      case 'add-measurement':measurementForm();break;
+      case 'add-measurement':{try{measurementForm();if(!$('#measurement-form',modalRoot))throw new Error('Форма замера не была создана');}catch(error){console.error('Ошибка открытия формы замера:',error);U.toast('Не удалось открыть форму замера: '+(error.message||'неизвестная ошибка'),'error');}break;}
       case 'submit-measurement':saveMeasurementForm();break;
       case 'measurement-menu':{const m=state.measurements.find(x=>x.id===id);if(!m)return;showModal(measureNames[m.type]||m.type,U.fmtDate(m.date),`<div class="stack"><button class="btn secondary block" data-action="edit-measurement" data-id="${id}">${U.icon('edit')} Изменить</button><button class="btn danger block" data-action="delete-measurement" data-id="${id}">${U.icon('trash')} Удалить</button></div>`);break;}
       case 'edit-measurement':measurementForm(state.measurements.find(x=>x.id===id));break;
