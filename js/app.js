@@ -87,6 +87,7 @@
     const renderers={home:renderHome,workout:renderWorkout,history:renderHistory,exercises:renderExercises,progress:renderProgress,body:renderBody,profile:renderProfile};
     screen.innerHTML=(renderers[tab]||renderHome)();
     screen.focus({preventScroll:true});
+    updateLiveWorkoutIndicator();
   }
   function startOfWeek(date){const d=U.dateAtNoon(date);const day=(d.getDay()-Number(state.settings.weekStart??1)+7)%7;d.setDate(d.getDate()-day);return U.localDate(d);}
   function weekDatesConfigured(date){const start=startOfWeek(date);return Array.from({length:7},(_,i)=>U.addDays(start,i));}
@@ -94,11 +95,11 @@
   function renderHome(){
     const today=U.localDate(), week=weekDatesConfigured(today), doneThis=activeWorkouts().filter(w=>week.includes(w.date)), prevStart=U.addDays(week[0],-7), prevEnd=U.addDays(week[6],-7), prev=activeWorkouts().filter(w=>w.date>=prevStart&&w.date<=prevEnd);
     const volume=doneThis.reduce((s,w)=>s+workoutVolume(w),0), prevVolume=prev.reduce((s,w)=>s+workoutVolume(w),0), diff=prevVolume?Math.round((volume-prevVolume)/prevVolume*100):null;
-    const plan=findTodayPlan(), missed=!findTodayPlan()?findMissedPlan():null, last=sortWorkouts(activeWorkouts())[0], streak=calculateStreak(), target=Number(state.settings.weeklyTarget)||3;
+    const plan=findTodayPlan(), todayActive=state.activeWorkout?.workout?.date===today?state.activeWorkout.workout:null, todayCompleted=sortWorkouts(activeWorkouts().filter(w=>w.date===today))[0]||null, todaySession=todayActive?{...todayActive,isActive:true}:todayCompleted?{...todayCompleted,isActive:false}:null, missed=!plan?findMissedPlan():null, last=sortWorkouts(activeWorkouts())[0], streak=calculateStreak(), target=Number(state.settings.weeklyTarget)||3;
     const weekdayLabels=shortDaysConfigured();
     const daily=week.map((day,i)=>({day,i,has:doneThis.some(w=>w.date===day),volume:doneThis.filter(w=>w.date===day).reduce((s,w)=>s+workoutVolume(w),0)}));
     const weeklyBars=`<div class="week-bars">${daily.map(x=>`<div class="week-day ${x.day===today?'today':''}"><div class="bar-track"><div class="bar-fill" style="height:${x.has?Math.max(12,Math.min(100,x.volume/Math.max(1,...daily.map(d=>d.volume))*100)):3}%"></div></div><span class="day-label">${weekdayLabels[x.i]}</span></div>`).join('')}</div>`;
-    const planContent=plan?`<div class="row between"><div><span class="pill blue">План на сегодня</span><h3 style="font-size:19px;letter-spacing:-.04em;margin:11px 0 4px">${U.esc(plan.day.name||plan.program.name)}</h3><div class="body-copy">${plan.day.items.length} упражн. · ${U.esc(plan.program.name)}</div></div>${U.icon('calendarCheck',27)}</div><div class="divider"></div><div class="stack">${plan.day.items.slice(0,4).map(it=>`<div class="row between"><span class="list-title">${U.esc(exerciseName(it.exerciseId))}</span><span class="small muted">${it.sets||1} × ${it.repsMin||8}${it.repsMax&&it.repsMax!==it.repsMin?'–'+it.repsMax:''}</span></div>`).join('')}</div><div class="row" style="margin-top:15px">${button('Начать тренировку','start-plan','primary','dumbbell')}<button class="btn secondary" data-action="move-plan" data-program="${plan.program.id}" data-day="${plan.day.id}" aria-label="Перенести план">${U.icon('repeat')}</button></div>`:missed?`<div class="row between"><div><span class="pill orange">План не выполнен</span><h3 style="font-size:18px;letter-spacing:-.04em;margin:11px 0 4px">${U.esc(missed.day.name)}</h3><p class="body-copy" style="margin:0">Вчера был запланирован этот день. Перенести его на сегодня?</p></div>${U.icon('calendar',28)}</div><div class="row" style="margin-top:15px"><button class="btn primary" data-action="move-missed-plan" data-program="${missed.program.id}" data-day="${missed.day.id}">Перенести на сегодня</button><button class="btn secondary" data-action="start-program" data-program="${missed.program.id}" data-day="${missed.day.id}">Начать</button></div>`:`<div class="row between"><div><span class="pill">План не назначен</span><h3 style="font-size:18px;letter-spacing:-.04em;margin:11px 0 4px">Сегодня свободный день</h3><p class="body-copy" style="margin:0">Создайте программу и назначьте её на день недели или начните тренировку с нуля.</p></div>${U.icon('calendar',28)}</div><div style="margin-top:15px">${button('Создать программу','add-program','ghost','plus')}</div>`;
+    const planContent=todaySession?`<div class="row between"><div><span class="pill green">${todaySession.isActive?'Тренировка идёт':'Тренировка выполнена сегодня'}</span><h3 style="font-size:19px;letter-spacing:-.04em;margin:11px 0 4px">${U.esc(todaySession.title||'Тренировка')}</h3><div class="body-copy">${(todaySession.exercises||[]).length} упражнений в занятии · ${totalSets(todaySession)} рабочих подходов</div></div>${U.icon('calendarCheck',27)}</div><div class="divider"></div><div class="row between"><span class="small muted">Фактический объём</span><b>${U.fmtNum(workoutVolume(todaySession),0)} кг</b></div><div style="margin-top:14px">${todaySession.isActive?'<button class="btn primary" data-tab="workout">Продолжить тренировку</button>':`<button class="btn ghost" data-action="open-workout" data-id="${todaySession.id}">Открыть итоги</button>`}</div>`:plan?`<div class="row between"><div><span class="pill blue">План на сегодня</span><h3 style="font-size:19px;letter-spacing:-.04em;margin:11px 0 4px">${U.esc(plan.day.name||plan.program.name)}</h3><div class="body-copy">${plan.day.items.length} упражн. · ${U.esc(plan.program.name)}</div></div>${U.icon('calendarCheck',27)}</div><div class="divider"></div>${programExercisePreview(plan.day,4)}<div class="row wrap" style="margin-top:15px">${button('Начать тренировку','start-plan','primary','dumbbell')}<button class="btn secondary" data-action="move-plan" data-program="${plan.program.id}" data-day="${plan.day.id}" aria-label="Перенести план">${U.icon('repeat')}</button><button class="btn ghost small-btn" data-action="edit-program-day" data-program="${plan.program.id}" data-day="${plan.day.id}">Изменить план</button></div>`:missed?`<div class="row between"><div><span class="pill orange">План не выполнен</span><h3 style="font-size:18px;letter-spacing:-.04em;margin:11px 0 4px">${U.esc(missed.day.name)}</h3><p class="body-copy" style="margin:0">Вчера был запланирован этот день. Перенести его на сегодня?</p></div>${U.icon('calendar',28)}</div><div class="row" style="margin-top:15px"><button class="btn primary" data-action="move-missed-plan" data-program="${missed.program.id}" data-day="${missed.day.id}">Перенести на сегодня</button><button class="btn secondary" data-action="start-program" data-program="${missed.program.id}" data-day="${missed.day.id}">Начать</button></div>`:`<div class="row between"><div><span class="pill">План не назначен</span><h3 style="font-size:18px;letter-spacing:-.04em;margin:11px 0 4px">Сегодня свободный день</h3><p class="body-copy" style="margin:0">Создайте программу и назначьте её на день недели или начните тренировку с нуля.</p></div>${U.icon('calendar',28)}</div><div style="margin-top:15px">${button('Создать программу','add-program','ghost','plus')}</div>`;
     const bodyGoal=state.goals.bodyWeight; const weight=latestMeasurement('weight');
     const badgePreview=nextAchievement();
     return `${pageHeading('Привет!','Твоя работа — твой прогресс.',`<span class="pill green">${U.icon('bolt',13)} Только на устройстве</span>`)}
@@ -349,18 +350,19 @@
     const lastBackup=state.lastBackup?U.fmtDateTime(state.lastBackup):'Ещё не создавалась';
     const themeLabels={system:'Как в системе',light:'Светлая',dark:'Тёмная'};
     const badges=achievementCatalog();
-    const unlockedBadges=badges.filter(b=>state.achievements.some(a=>a.id===b.id)).length;
+    const unlockedBadges=badges.filter(b=>state.achievements.some(a=>a.id===b.id)).length, visibleBadges=achievementsExpanded?badges:badges.slice(0,4);
     return `${pageHeading('Профиль','Твои цели, достижения и параметры дневника.')}
       <div class="card accent-card"><div class="row between"><div><div class="eyebrow">ТВОЙ УРОВЕНЬ</div><div style="font-size:37px;font-weight:800;letter-spacing:-.07em;margin-top:4px">${level}<span style="font-size:15px;letter-spacing:0;font-weight:600"> уровень</span></div><div class="small muted">${U.fmtNum(xp)} XP всего</div></div><div class="achievement-icon" style="width:54px;height:54px;border-radius:18px">${U.icon('trophy',27)}</div></div><div class="progress-track" style="margin-top:17px;background:rgba(255,255,255,.25)"><div class="progress-fill" style="width:${levelPct}%;background:#fff"></div></div><div class="row between small muted" style="margin-top:7px"><span>${xp%250} / 250 XP</span><span>До уровня ${level+1}</span></div></div>
       <div class="grid-3" style="margin-top:11px">${kpi(completed,'Тренировок','','calendar')}${kpi(sets,'Подходов','','dumbbell')}${kpi(`${U.fmtNum(activeWorkouts().reduce((s,w)=>s+workoutVolume(w),0)/1000,1)} т`,'Объём','','trend')}</div>
       ${section('Достижения',`<span class="small muted">${unlockedBadges} / ${badges.length}</span>`)}
-      <div class="card">${badges.map(b=>{const unlocked=state.achievements.some(a=>a.id===b.id);return `<div class="achievement"><div class="achievement-icon ${unlocked?'':'locked'}">${U.icon(unlocked?'trophy':'target',20)}</div><div class="achievement-copy"><b>${U.esc(b.title)}</b><span>${U.esc(b.description)}</span></div>${unlocked?`<span class="pill green">Получено</span>`:`<span class="small muted">Закрыто</span>`}</div>`}).join('')}</div>
+      <div class="card">${visibleBadges.map(b=>{const unlocked=state.achievements.some(a=>a.id===b.id);return `<div class="achievement"><div class="achievement-icon ${unlocked?'':'locked'}">${U.icon(unlocked?'trophy':'target',20)}</div><div class="achievement-copy"><b>${U.esc(b.title)}</b><span>${U.esc(b.description)}</span></div>${unlocked?`<span class="pill green">Получено</span>`:`<span class="small muted">Закрыто</span>`}</div>`}).join('')}${badges.length>4?`<button class="btn ghost block" style="margin-top:8px" data-action="toggle-achievements">${achievementsExpanded?'Свернуть достижения':`Показать все ${badges.length} достижений`}</button>`:''}</div>
       ${section('Настройки')}
       <div class="card"><div class="toggle-row"><div class="toggle-copy"><b>Оформление</b><span>Светлая, тёмная или системная тема</span></div><select class="select" style="width:auto;min-height:38px;font-size:11px" data-setting="theme">${Object.entries(themeLabels).map(([v,l])=>`<option value="${v}" ${state.settings.theme===v?'selected':''}>${l}</option>`).join('')}</select></div>
       <div class="toggle-row"><div class="toggle-copy"><b>Шаг веса по умолчанию</b><span>Для новых упражнений</span></div><select class="select" style="width:90px;min-height:38px" data-setting="defaultStep">${[1,1.25,2.5,5].map(v=>`<option value="${v}" ${Number(state.settings.defaultStep)===v?'selected':''}>${U.fmtNum(v)} кг</option>`).join('')}</select></div>
       <div class="toggle-row"><div class="toggle-copy"><b>Отдых между подходами</b><span>По умолчанию, секунд</span></div><select class="select" style="width:94px;min-height:38px" data-setting="restSeconds">${[30,45,60,75,90,120,150,180,240].map(v=>`<option value="${v}" ${Number(state.settings.restSeconds)===v?'selected':''}>${v} сек.</option>`).join('')}</select></div>
       <div class="toggle-row"><div class="toggle-copy"><b>Разминочные подходы</b><span>Отдельный тип, без учёта в объёме и PR</span></div><button class="toggle" role="switch" aria-checked="${state.settings.warmups?'true':'false'}" data-action="toggle-setting" data-setting="warmups"></button></div>
       <div class="toggle-row"><div class="toggle-copy"><b>Дополнительные поля подходов</b><span>RPE, RIR, пометки и заметки</span></div><button class="toggle" role="switch" aria-checked="${state.settings.extraFields?'true':'false'}" data-action="toggle-setting" data-setting="extraFields"></button></div>
+      <div class="toggle-row"><div class="toggle-copy"><b>Звуковой сигнал окончания отдыха</b><span>Короткий сигнал без вибрации. Можно отключить.</span></div><button class="toggle" role="switch" aria-checked="\${state.settings.restSound?'true':'false'}" data-action="toggle-setting" data-setting="restSound"></button></div>
       <div class="toggle-row"><div class="toggle-copy"><b>Формула расчётного 1ПМ</b><span>Для аналитики и рекордов</span></div><select class="select" style="width:105px;min-height:38px" data-setting="oneRm"><option value="epley" ${state.settings.oneRm==='epley'?'selected':''}>Эпли</option><option value="brzycki" ${state.settings.oneRm==='brzycki'?'selected':''}>Бжицки</option></select></div>
       <div class="toggle-row"><div class="toggle-copy"><b>Начало недели</b><span>Для календаря и аналитики</span></div><select class="select" style="width:115px;min-height:38px" data-setting="weekStart"><option value="1" ${Number(state.settings.weekStart)===1?'selected':''}>Понедельник</option><option value="0" ${Number(state.settings.weekStart)===0?'selected':''}>Воскресенье</option></select></div>
       <div class="toggle-row"><div class="toggle-copy"><b>Цель тренировок в неделю</b><span>Для кольца на главной</span></div><select class="select" style="width:78px;min-height:38px" data-setting="weeklyTarget">${[2,3,4,5,6,7].map(v=>`<option value="${v}" ${(Number(state.settings.weeklyTarget)||3)===v?'selected':''}>${v}</option>`).join('')}</select></div>
@@ -495,7 +497,7 @@ function saveMeasurementForm(){
   }
   function adjustCurrentSet(id,field,delta){const found=findSet(id);if(!found)return;const step=field==='weight'?(Number(findExercise(found.exercise.exerciseId)?.step)||Number(state.settings.defaultStep)||2.5):1;const value=Number(found.set[field])||0;found.set[field]=Math.max(0,U.round(value+Number(delta),field==='weight'?2:0));const input=$(`[data-set-id="${id}"][data-set-field="${field}"]`);if(input)input.value=found.set[field];save(true);updateWorkoutStats();}
   function updateWorkoutStats(){const w=currentWorkout();if(!w)return;const d=$('[data-workout-volume]');if(d)d.textContent=U.fmtNum(workoutVolume(w),0)+' кг';const s=$('[data-workout-sets]');if(s)s.textContent=totalSets(w);}
-  function recordSet(id){const found=findSet(id);if(!found)return;const {set,exercise}=found;
+  function recordSet(id){const found=findSet(id);if(!found)return;unlockRestAudio();const {set,exercise}=found;
     if(set.done){set.done=false;set.restSeconds=null;state.activeWorkout.rest=null;save(true);render();U.toast('Запись подхода отменена');return;}
     set.weight=Math.max(0,Number(set.weight)||0);set.reps=Math.max(0,Number(set.reps)||0);if(!set.reps){U.toast('Укажите количество повторов');return;}
     const now=Date.now();const lastAt=state.activeWorkout.lastSetAt;set.restSeconds=lastAt?Math.max(0,Math.round((now-lastAt)/1000)):null;set.done=true;set.createdAt=new Date(now).toISOString();state.activeWorkout.lastSetAt=now;
@@ -518,6 +520,8 @@ function saveMeasurementForm(){
       case 'backdrop-close':if(el===ev.target)closeModal();break;
       case 'toggle-program-expand':{const dayId=el.dataset.id;if(expandedProgramDays.has(dayId))expandedProgramDays.delete(dayId);else expandedProgramDays.add(dayId);render();break;}
       case 'edit-program-day':{const p=state.programs.find(x=>x.id===el.dataset.program),d=p?.days.find(x=>x.id===el.dataset.day);if(p&&d)addProgramForm(p,d);break;}
+      case 'go-to-workout':tab='workout';render();break;
+      case 'toggle-achievements':achievementsExpanded=!achievementsExpanded;render();break;
       case 'quick-add':showModal('Быстрое действие','Выберите, что хотите добавить.',`<div class="stack"><button class="btn secondary block" data-action="quick-start">${U.icon('dumbbell')} Начать тренировку</button><button class="btn secondary block" data-action="quick-exercise">${U.icon('plus')} Добавить упражнение</button><button class="btn secondary block" data-action="quick-measure">${U.icon('scale')} Записать замер</button></div>`);break;
       case 'quick-start':closeModal();makeWorkout();break;
       case 'quick-exercise':closeModal();exerciseForm();break;
@@ -590,7 +594,7 @@ function saveMeasurementForm(){
       case 'add-goal':liftGoalForm();break;
       case 'submit-lift-goal':saveLiftGoal();break;
       case 'delete-goal':state.goals.lifts=state.goals.lifts.filter(g=>g.id!==id);save(true);render();break;
-      case 'toggle-setting':{const key=el.dataset.setting;state.settings[key]=!state.settings[key];save(true);render();break;}
+      case 'toggle-setting':{const key=el.dataset.setting;state.settings[key]=!state.settings[key];if(key==='restSound'&&state.settings[key])unlockRestAudio();save(true);render();break;}
       case 'export-json':exportJson();break;
       case 'export-xlsx':exportXlsx();break;
       case 'import-backup':$('#backup-file')?.click();break;
@@ -637,19 +641,56 @@ function saveMeasurementForm(){
     if(el.matches('[data-search="history"]')){historySearch=el.value;const pos=el.selectionStart;render();const input=$('[data-search="history"]');if(input){input.focus();input.setSelectionRange(pos,pos);}return;}
     if(el.matches('[data-picker-search]')){const q=el.value.toLowerCase();$$('label.row',el.closest('.modal-sheet')).forEach(label=>{label.style.display=label.textContent.toLowerCase().includes(q)?'flex':'none';});return;}
   }
-  function paintClocks(){
-    const w=currentWorkout();if(!w)return;const elapsed=Math.max(0,Date.now()-new Date(w.startAt).getTime());const duration=U.fmtDuration(elapsed);
-    $$('[data-workout-elapsed],[data-workout-duration]').forEach(x=>x.textContent=duration);
-    if(state.activeWorkout.rest){const r=state.activeWorkout.rest,remaining=Math.max(0,Math.ceil((r.until-Date.now())/1000));const time=$('[data-rest-time]');if(time)time.textContent=formatSeconds(remaining);const ring=$('.rest-ring .progress');if(ring)ring.style.strokeDashoffset=119*(1-Math.min(1,remaining/(r.duration||1)));if(remaining===0){state.activeWorkout.rest=null;save(true);$('.rest-panel')?.remove();}}
+    function activeExerciseForLive(w){
+    const exercises=w.exercises||[];
+    return exercises.find(e=>(e.sets||[]).some(s=>s.type!=='warmup'&&!s.done))||[...exercises].reverse().find(e=>(e.sets||[]).some(s=>s.done&&s.type!=='warmup'))||exercises[0]||null;
+  }
+  function updateLiveWorkoutIndicator(){
+    const root=$('#live-workout-indicator');if(!root)return;
+    const w=currentWorkout();if(!w){root.hidden=true;root.innerHTML='';return;}
+    root.hidden=false;
+    const elapsed=U.fmtDuration(Math.max(0,Date.now()-new Date(w.startAt).getTime()));
+    const exercise=activeExerciseForLive(w),rest=state.activeWorkout.rest;
+    const remaining=rest?Math.max(0,Math.ceil((rest.until-Date.now())/1000)):0;
+    root.innerHTML=`<button type="button" class="live-workout-button" data-action="go-to-workout" aria-label="Перейти к активной тренировке"><span class="live-pulse"></span><span class="live-workout-copy"><b>${rest?'Отдых · '+formatSeconds(remaining):U.esc(exercise?.name||'Тренировка')}</b><small>${rest?'До конца отдыха':'Активная тренировка'} · ${elapsed}</small></span><span class="live-workout-time">${rest?formatSeconds(remaining):elapsed}</span></button>`;
+  }
+  function unlockRestAudio(){
+    try{const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)return;if(!restAudioContext)restAudioContext=new AudioContextClass();if(restAudioContext.state==='suspended')restAudioContext.resume().catch(()=>{});}catch(error){console.warn('Аудиосигнал отдыха недоступен:',error);}
+  }
+  function playRestEndSignal(){
+    if(!state?.settings?.restSound)return;
+    try{
+      unlockRestAudio();const ctx=restAudioContext;if(!ctx||ctx.state!=='running')return;
+      const start=ctx.currentTime+0.03;
+      [880,1174].forEach((frequency,index)=>{
+        const at=start+index*0.2,osc=ctx.createOscillator(),gain=ctx.createGain();
+        osc.type='sine';osc.frequency.setValueAtTime(frequency,at);
+        gain.gain.setValueAtTime(0.0001,at);gain.gain.exponentialRampToValueAtTime(0.16,at+0.025);gain.gain.exponentialRampToValueAtTime(0.0001,at+0.16);
+        osc.connect(gain);gain.connect(ctx.destination);osc.start(at);osc.stop(at+0.18);
+      });
+    }catch(error){console.warn('Не удалось воспроизвести сигнал отдыха:',error);}
+  }
+function paintClocks(){
+    const w=currentWorkout();if(!w){updateLiveWorkoutIndicator();return;}
+    const elapsed=Math.max(0,Date.now()-new Date(w.startAt).getTime()),duration=U.fmtDuration(elapsed);
+    $('[data-workout-elapsed],[data-workout-duration]').forEach(x=>x.textContent=duration);
+    if(state.activeWorkout.rest){
+      const rest=state.activeWorkout.rest,remaining=Math.max(0,Math.ceil((rest.until-Date.now())/1000));
+      const time=$('[data-rest-time]');if(time)time.textContent=formatSeconds(remaining);
+      const ring=$('.rest-ring .progress');if(ring)ring.style.strokeDashoffset=119*(1-Math.min(1,remaining/(rest.duration||1)));
+      if(remaining===0){state.activeWorkout.rest=null;state.activeWorkout.restFinishedAt=Date.now();playRestEndSignal();save(true);$('.rest-panel')?.remove();U.toast('Время отдыха завершено','success');}
+    }
+    updateLiveWorkoutIndicator();
   }
   function handleChartPoint(ev){const point=ev.target.closest('[data-chart-point]');if(!point)return;const wrap=point.closest('[data-chart="line"]'),data=JSON.parse(wrap.dataset.chartData||'[]'),item=data[Number(point.dataset.chartPoint)];if(!item)return;const tip=$('.chart-tooltip',wrap);tip.textContent=`${item.label||item.date}: ${U.fmtNum(item.value)}${progressExercise==='all'?' кг':' кг'}`;tip.classList.remove('hidden');setTimeout(()=>tip.classList.add('hidden'),2400);}
   async function init(){
-    state=await DB.load();if(!state.settings.weeklyTarget)state.settings.weeklyTarget=3;
+    state=await DB.load();if(!state.settings.weeklyTarget)state.settings.weeklyTarget=3;if(typeof state.settings.restSound!=='boolean')state.settings.restSound=true;
     U.setTheme(state.settings.theme);await DB.requestPersistence();
     if(state.activeWorkout?.workout&&!state.activeWorkout.workout.startAt)state.activeWorkout.workout.startAt=new Date().toISOString();
     if('serviceWorker' in navigator&&location.protocol!=='file:') navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.warn('Service Worker не зарегистрирован:',e));
     render();setInterval(paintClocks,1000);
   }
+  ['gesturestart','gesturechange','gestureend'].forEach(type=>document.addEventListener(type,ev=>ev.preventDefault(),{passive:false}));
   document.addEventListener('click',ev=>{
     const tabButton=ev.target.closest('[data-tab]');if(tabButton){tab=tabButton.dataset.tab;render();return;}
     const el=ev.target.closest('[data-action]');if(el){handleAction(ev,el);return;}
