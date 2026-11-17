@@ -2,7 +2,7 @@
   'use strict';
   const U=window.TrainingUtils, DB=window.TrainingDB, Charts=window.TrainingCharts, Backup=window.TrainingBackup;
   let state, tab='home', exerciseMode='library', monthCursor=new Date(), historyDate='', historySearch='', exerciseSearch='', exerciseMuscle='all', exerciseEquipment='all';
-  let progressPeriod='3m', progressExercise='all', bodyMetric='weight', bodyCompareFrom='', bodyCompareTo='', importState=null, installPrompt=null, renderToken=0;
+  let progressPeriod='3m', progressExercise='all', bodyMetric='weight', bodyCompareFrom='', bodyCompareTo='', importState=null, installPrompt=null, renderToken=0, achievementsExpanded=false, expandedProgramDays=new Set(), restAudioContext=null;
   const screen=document.getElementById('screen'), modalRoot=document.getElementById('modal-root');
   const muscleNames=['Грудь','Спина','Плечи','Бицепс','Трицепс','Предплечья','Пресс','Квадрицепс','Бицепс бедра','Ягодицы','Икры','Трапеции','Поясница','Шея','Другое'];
   const equipmentNames=['Штанга','Гантели','Блок','Тренажёр','Собственный вес','Другое'];
@@ -59,10 +59,11 @@
     for(const p of state.programs) for(const d of (p.days||[])) if(d.weekday!==null&&d.weekday!==undefined&&Number(d.weekday)===weekday) return {program:p,day:d};
     return null;
   }
-  function findMissedPlan(){const yesterday=U.addDays(U.localDate(),-1),weekday=U.dateAtNoon(yesterday).getDay();if(activeWorkouts().some(w=>w.date===yesterday))return null;for(const p of state.programs)for(const d of p.days||[])if(d.weekday!==null&&d.weekday!==undefined&&Number(d.weekday)===weekday)return {program:p,day:d};return null;}
+  function hasWorkoutOnDate(date){return activeWorkouts().some(w=>w.date===date)||(state.activeWorkout?.workout?.date===date);}
+  function findMissedPlan(){const today=U.localDate(),yesterday=U.addDays(today,-1);if(hasWorkoutOnDate(today)||hasWorkoutOnDate(yesterday))return null;const weekday=U.dateAtNoon(yesterday).getDay();for(const p of state.programs)for(const d of p.days||[])if(d.weekday!==null&&d.weekday!==undefined&&Number(d.weekday)===weekday)return {program:p,day:d};return null;}
   function makeWorkout(plan=null, source=null) {
     if(state.activeWorkout?.workout){tab='workout';render();U.toast('У тебя уже есть незавершённая тренировка. Продолжи её.');return;}
-    const now=new Date(); const w={id:U.uid('workout'),date:U.localDate(now),title:plan?.day?.name||source?.title||'Тренировка',startAt:now.toISOString(),endAt:null,duration:0,volume:0,sourceProgram:plan?.program?.id||'',exercises:[]};
+    const now=new Date(); const w={id:U.uid('workout'),date:U.localDate(now),title:plan?.day?.name||source?.title||'Тренировка',startAt:now.toISOString(),endAt:null,duration:0,volume:0,sourceProgram:plan?.program?.id||source?.sourceProgram||'',sourceProgramDay:plan?.day?.id||source?.sourceProgramDay||'',exercises:[]};
     if(plan) (plan.day.items||[]).forEach(item=>{const e=makeSessionExercise(item.exerciseId,item.sets||1,item.repsMin||8);if(e){const previous=lastForExercise(item.exerciseId);const hasPreviousResults=allDoneSets(previous).length>0;const plannedStart=Number(item.startingWeightKg)||0;if(plannedStart>0&&!hasPreviousResults)e.sets.forEach(s=>{if(!s.weight)s.weight=plannedStart;});if(Number(item.warmupSets)>0&&state.settings.warmups){const warmupCount=Math.min(5,Number(item.warmupSets));const baseWeight=plannedStart>0&&!hasPreviousResults?plannedStart:(Number(e.sets[0]?.weight)||0);const warmups=Array.from({length:warmupCount},(_,i)=>({id:U.uid('set'),weight:baseWeight>0?U.round(baseWeight*(.5+.2*i),2):0,reps:Math.max(1,Math.min(12,Number(item.repsMin)||8)),type:'warmup',done:false,tags:[],rpe:null,rir:null,note:'',restSeconds:null,createdAt:new Date().toISOString()}));e.sets=[...warmups,...e.sets];}w.exercises.push(e);}});
     if(source) (source.exercises||[]).forEach(e=>{const s=makeSessionExercise(e.exerciseId,(e.sets||[]).length||1,8);if(s){s.sets.forEach((x,i)=>{const prev=e.sets?.[i];if(prev){x.weight=Number(prev.weight)||0;x.reps=Number(prev.reps)||0;}});w.exercises.push(s);}});
     state.activeWorkout={workout:w,rest:null,recordFlash:null}; save(true); tab='workout'; render();
@@ -281,7 +282,7 @@
   }
   function weeklyStreak(){const weeks=new Set(activeWorkouts().map(w=>startOfWeek(w.date)));let d=startOfWeek(U.localDate()),count=0;if(!weeks.has(d))d=U.addDays(d,-7);while(weeks.has(d)){count++;d=U.addDays(d,-7);}return count;}
   function finishWorkout(){
-    const w=currentWorkout();if(!w)return;const now=new Date();w.endAt=now.toISOString();w.duration=Math.max(0,now-new Date(w.startAt).getTime());w.volume=workoutVolume(w);w.exercises=w.exercises.map(e=>({...e,sets:e.sets.map(s=>({...s,weight:Math.max(0,Number(s.weight)||0),reps:Math.max(0,Number(s.reps)||0)}))}));
+    const w=currentWorkout();if(!w)return;const now=new Date();w.endAt=now.toISOString();w.duration=Math.max(0,now-new Date(w.startAt).getTime());w.volume=workoutVolume(w);w.exercises=w.exercises.map(e=>({...e,sets:e.sets.map(s=>({...s,weight:Math.max(0,Number(s.weight)||0),reps:Math.max(0,Number(s.reps)||0)}))})).filter(e=>e.sets.some(s=>s.done&&s.type!=='warmup'));
     const records=makeRecords(w);state.records.push(...records);state.workouts.push(w);const earned=50+totalSets(w)*10+records.length*25;state.xp=(state.xp||0)+earned;const newBadges=calculateAchievements();state.activeWorkout=null;save(true);
     const previous=sortWorkouts(state.workouts.filter(x=>x.id!==w.id&&x.sourceProgram===w.sourceProgram&&x.title===w.title))[0];const diff=previous?Math.round((w.volume-workoutVolume(previous))/Math.max(1,workoutVolume(previous))*100):null;
     const recordHtml=records.length?`<div class="record-banner"><b style="font-size:12px">${U.icon('trophy',15)} ${records.length} новых рекордов</b>${records.slice(0,5).map(r=>`<div class="small" style="margin-top:5px">${U.esc(r.exerciseName)} · ${U.esc(r.label)}: ${U.fmtNum(r.value)}</div>`).join('')}</div>`:'<div class="inline-notice">В этот раз без новых рекордов — тренировка сохранена.</div>';
@@ -296,13 +297,13 @@
       if(sets.length){const value=selected?Math.max(...sets.map(s=>Number(s.weight)||0)):workoutVolume(w);points.push({date:w.date,label:U.fmtDate(w.date,{day:'numeric',month:'short'}),shortLabel:U.fmtDate(w.date,{day:'numeric',month:'short'}),value:U.round(value,1)});}
     });
     const totalVolume=inRange.reduce((s,w)=>s+workoutVolume(w),0), avgDuration=inRange.length?inRange.reduce((s,w)=>s+(w.duration||0),0)/inRange.length:0;
-    const equipment={},exerciseVolumes={};inRange.forEach(w=>(w.exercises||[]).forEach(e=>{const info=findExercise(e.exerciseId);const eq=info?.equipment||e.equipment||'Другое';equipment[eq]=(equipment[eq]||0)+allDoneSets(e).length;exerciseVolumes[e.name||exerciseName(e.exerciseId)]=(exerciseVolumes[e.name||exerciseName(e.exerciseId)]||0)+allDoneSets(e).reduce((sum,s)=>sum+(Number(s.weight)||0)*(Number(s.reps)||0),0);}));
+    const equipment={},exerciseVolumes={};inRange.forEach(w=>(w.exercises||[]).forEach(e=>{const done=allDoneSets(e);if(!done.length)return;const info=findExercise(e.exerciseId);const eq=info?.equipment||e.equipment||'Другое';equipment[eq]=(equipment[eq]||0)+done.length;const name=e.name||exerciseName(e.exerciseId);exerciseVolumes[name]=(exerciseVolumes[name]||0)+done.reduce((sum,s)=>sum+(Number(s.weight)||0)*(Number(s.reps)||0),0);}));
     const exerciseVolumeData=Object.entries(exerciseVolumes).map(([label,value])=>({label,value:U.round(value,0)})).sort((a,b)=>b.value-a.value).slice(0,8);const equipmentData=Object.entries(equipment).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value);
     const periodRange=dateRange(progressPeriod),periodLength=progressPeriod==='all'?0:Math.max(1,Math.round((U.dateAtNoon(periodRange.end)-U.dateAtNoon(periodRange.start))/86400000)+1),prevPeriod=periodLength?activeWorkouts().filter(w=>w.date>=U.addDays(periodRange.start,-periodLength)&&w.date<U.addDays(periodRange.start,0)):[],prevVol=prevPeriod.reduce((s,w)=>s+workoutVolume(w),0);const volumeChange=prevVol?Math.round((totalVolume-prevVol)/prevVol*100):null;
     const workingSets=inRange.reduce((s,w)=>s+totalSets(w),0);
     const weekVolume={};inRange.forEach(w=>{const key=startOfWeek(w.date);weekVolume[key]=(weekVolume[key]||0)+workoutVolume(w);});
     const weekly=Object.entries(weekVolume).sort((a,b)=>a[0].localeCompare(b[0])).slice(-8).map(([date,value])=>({label:U.fmtDate(date,{day:'numeric',month:'short'}),shortLabel:U.fmtDate(date,{day:'numeric',month:'short'}),value}));
-    const muscle={};inRange.forEach(w=>(w.exercises||[]).forEach(e=>(e.muscles||findExercise(e.exerciseId)?.muscles||[]).forEach(m=>muscle[m]=(muscle[m]||0)+allDoneSets(e).length)));
+    const muscle={};inRange.forEach(w=>(w.exercises||[]).forEach(e=>{const doneCount=allDoneSets(e).length;if(!doneCount)return;(e.muscles||findExercise(e.exerciseId)?.muscles||[]).forEach(m=>muscle[m]=(muscle[m]||0)+doneCount);}));
     const muscleData=Object.entries(muscle).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value);
     const periodOptions=[['month','Месяц'],['3m','3 мес.'],['6m','6 мес.'],['year','Год'],['all','Всё']];
     const personalBest=state.records.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
