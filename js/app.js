@@ -73,22 +73,59 @@
   function restSecondsFor(ex){return Number(findExercise(ex.exerciseId)?.rest)||Number(state.settings.restSeconds)||90;}
   function showModal(title,subtitle,content,buttons='') {
     modalRoot.innerHTML=`<div class="modal-backdrop" data-action="backdrop-close"><section class="modal-sheet" role="dialog" aria-modal="true" aria-label="${U.esc(title)}"><div class="sheet-handle"></div><div class="modal-head"><div><h2>${U.esc(title)}</h2>${subtitle?`<p>${U.esc(subtitle)}</p>`:''}</div><button class="modal-close" data-action="close-modal" aria-label="Закрыть">×</button></div>${content}${buttons?`<div class="modal-actions">${buttons}</div>`:''}</section></div>`;
-    const sheet=$('.modal-sheet',modalRoot); let startY=0;
-    sheet.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;},{passive:true});
-    sheet.addEventListener('touchend',e=>{const delta=e.changedTouches[0].clientY-startY;if(delta>125&&sheet.scrollTop===0)closeModal();},{passive:true});
+    const sheet=$('.modal-sheet',modalRoot); let startY=0, startScroll=0, dragging=false;
+    sheet.addEventListener('touchstart',e=>{startY=e.touches[0].clientY;startScroll=sheet.scrollTop;dragging=false;},{passive:true});
+    sheet.addEventListener('touchmove',e=>{
+      if(startScroll>0||sheet.scrollTop>0)return;
+      const delta=e.touches[0].clientY-startY;
+      if(delta>0){dragging=true;sheet.classList.add('is-dragging');sheet.style.transform=`translate3d(0,${Math.min(delta,260)}px,0)`;}
+    },{passive:true});
+    sheet.addEventListener('touchend',e=>{
+      const delta=e.changedTouches[0].clientY-startY;
+      sheet.classList.remove('is-dragging');
+      if(dragging&&delta>125&&sheet.scrollTop===0)closeModal();
+      else sheet.style.transform='';
+      dragging=false;
+    },{passive:true});
+    sheet.addEventListener('touchcancel',()=>{sheet.classList.remove('is-dragging');sheet.style.transform='';dragging=false;},{passive:true});
     setTimeout(()=>$('.modal-close',modalRoot)?.focus(),40);
   }
-  function closeModal(){modalRoot.innerHTML='';}
-  function render(){
+  function closeModal(){
+    const backdrop=$('.modal-backdrop',modalRoot);
+    if(!backdrop){modalRoot.innerHTML='';return;}
+    backdrop.classList.add('is-closing');
+    $('.modal-sheet',backdrop)?.classList.add('is-closing');
+    setTimeout(()=>{if(modalRoot.firstElementChild===backdrop)modalRoot.innerHTML='';},220);
+  }
+  function render(animate=false){
     if(!state)return; renderToken++;
     syncRestTimer();
     U.setTheme(state.settings.theme);
-    $$('.tab-item').forEach(b=>b.classList.toggle('is-active',b.dataset.tab===tab));
+    const navTab=['exercises','body','profile'].includes(tab)?'more':tab;
+    $$('.tab-item').forEach(b=>b.classList.toggle('is-active',b.dataset.tab===navTab));
     $$('[data-icon]').forEach(node=>{ node.innerHTML=U.icon(node.dataset.icon,20); });
-    const renderers={home:renderHome,workout:renderWorkout,history:renderHistory,exercises:renderExercises,progress:renderProgress,body:renderBody,profile:renderProfile};
+    const renderers={home:renderHome,workout:renderWorkout,history:renderHistory,exercises:renderExercises,progress:renderProgress,body:renderBody,profile:renderProfile,more:renderMore};
+    screen.classList.remove('is-entering');
     screen.innerHTML=(renderers[tab]||renderHome)();
+    if(animate){void screen.offsetWidth;screen.classList.add('is-entering');}
     screen.focus({preventScroll:true});
     updateLiveWorkoutIndicator();
+  }
+  function renderMore(){
+    const rows=[
+      ['list','Упражнения','Библиотека, блоки и программы','exercises'],
+      ['body','Параметры тела','Замеры, цели и динамика','body'],
+      ['user','Профиль и настройки','Темы, резервные копии и параметры','profile']
+    ];
+    return `${pageHeading('Ещё','Дополнительные разделы дневника')}
+      <div class="ios-settings-group">
+        ${rows.map(([icon,title,detail,sectionName])=>`<button type="button" class="ios-settings-row" data-action="open-section" data-section="${sectionName}">
+          <span class="ios-settings-icon">${U.icon(icon,19)}</span>
+          <span class="ios-settings-copy"><b>${title}</b><small>${detail}</small></span>
+          <span class="ios-settings-chevron">${U.icon('chevron',17)}</span>
+        </button>`).join('')}
+      </div>
+      <p class="ios-settings-footnote">Все разделы и данные остались на месте. Здесь собраны инструменты, которыми пользуются не каждый день.</p>`;
   }
   function startOfWeek(date){const d=U.dateAtNoon(date);const day=(d.getDay()-Number(state.settings.weekStart??1)+7)%7;d.setDate(d.getDate()-day);return U.localDate(d);}
   function weekDatesConfigured(date){const start=startOfWeek(date);return Array.from({length:7},(_,i)=>U.addDays(start,i));}
@@ -375,7 +412,7 @@
       ${section('Программа от ИИ-тренера')}
       <div class="card"><div class="row between"><div><b class="list-title">Загрузить готовый план</b><div class="list-meta">JSON-файл с упражнениями, блоками и расписанием</div></div><span class="pill blue">Только добавление</span></div><p class="body-copy">Нейросеть-тренер может подготовить файл по инструкции. Импорт добавит новые упражнения и программы, сопоставит уже известные упражнения и пропустит повторно загруженные версии. Существующие тренировки, замеры и настройки не заменяются.</p><button class="btn primary block" data-action="import-coach-plan">${U.icon('upload')} Загрузить программу тренера</button><input id="coach-file" type="file" accept=".json,application/json" class="hidden"></div>
       ${section('О приложении')}
-      <div class="card"><div class="row between"><div><b class="list-title">Тренировки</b><div class="list-meta">Версия 1.1.11 · автономный дневник</div></div><span class="pill blue">PWA</span></div><div class="divider"></div><div class="body-copy">Данные остаются на устройстве и не отправляются на сервер. Приложение не использует аналитику, трекеры, рекламу, внешние шрифты или сетевые API. Для установки PWA требуется открыть сайт по HTTPS и хотя бы один раз загрузить его онлайн.</div><div class="divider"></div><button class="btn danger block" data-action="clear-data">${U.icon('trash')} Очистить все данные</button></div>`;
+      <div class="card"><div class="row between"><div><b class="list-title">Тренировки</b><div class="list-meta">Версия 1.2.0 · автономный дневник</div></div><span class="pill blue">PWA</span></div><div class="divider"></div><div class="body-copy">Данные остаются на устройстве и не отправляются на сервер. Приложение не использует аналитику, трекеры, рекламу, внешние шрифты или сетевые API. Для установки PWA требуется открыть сайт по HTTPS и хотя бы один раз загрузить его онлайн.</div><div class="divider"></div><button class="btn danger block" data-action="clear-data">${U.icon('trash')} Очистить все данные</button></div>`;
   }
   function showAddExercise(){
     const items=state.exercises.filter(e=>!e.archived);if(!items.length){U.toast('Сначала добавьте упражнение в библиотеку');tab='exercises';render();return;}
@@ -517,6 +554,7 @@ function saveMeasurementForm(){
     const action=el.dataset.action;
     const id=el.dataset.id;
     switch(action){
+      case 'open-section':{const section=el.dataset.section;if(['exercises','body','profile'].includes(section)){tab=section;render(true);}break;}
       case 'close-modal':closeModal();break;
       case 'backdrop-close':if(el===ev.target)closeModal();break;
       case 'toggle-program-expand':{const dayId=el.dataset.id;if(expandedProgramDays.has(dayId))expandedProgramDays.delete(dayId);else expandedProgramDays.add(dayId);render();break;}
@@ -715,7 +753,7 @@ function paintClocks(){
   }
   ['gesturestart','gesturechange','gestureend'].forEach(type=>document.addEventListener(type,ev=>ev.preventDefault(),{passive:false}));
   document.addEventListener('click',ev=>{
-    const tabButton=ev.target.closest('[data-tab]');if(tabButton){tab=tabButton.dataset.tab;render();return;}
+    const tabButton=ev.target.closest('[data-tab]');if(tabButton){const nextTab=tabButton.dataset.tab;if(nextTab!==tab){tab=nextTab;render(true);}return;}
     const el=ev.target.closest('[data-action]');if(el){handleAction(ev,el);return;}
     handleChartPoint(ev);
   });
