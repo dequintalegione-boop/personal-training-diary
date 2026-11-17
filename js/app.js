@@ -81,6 +81,7 @@
   function closeModal(){modalRoot.innerHTML='';}
   function render(){
     if(!state)return; renderToken++;
+    syncRestTimer();
     U.setTheme(state.settings.theme);
     $$('.tab-item').forEach(b=>b.classList.toggle('is-active',b.dataset.tab===tab));
     $$('[data-icon]').forEach(node=>{ node.innerHTML=U.icon(node.dataset.icon,20); });
@@ -641,7 +642,20 @@ function saveMeasurementForm(){
     if(el.matches('[data-search="history"]')){historySearch=el.value;const pos=el.selectionStart;render();const input=$('[data-search="history"]');if(input){input.focus();input.setSelectionRange(pos,pos);}return;}
     if(el.matches('[data-picker-search]')){const q=el.value.toLowerCase();$$('label.row',el.closest('.modal-sheet')).forEach(label=>{label.style.display=label.textContent.toLowerCase().includes(q)?'flex':'none';});return;}
   }
-    function activeExerciseForLive(w){
+    function syncRestTimer(){
+    const rest=state?.activeWorkout?.rest;
+    if(!rest)return false;
+    const remaining=Number(rest.until)-Date.now();
+    if(Number.isFinite(remaining)&&remaining>0)return false;
+    state.activeWorkout.rest=null;
+    state.activeWorkout.restFinishedAt=Date.now();
+    playRestEndSignal();
+    save(true);
+    $('.rest-panel')?.remove();
+    U.toast('Время отдыха завершено','success');
+    return true;
+  }
+  function activeExerciseForLive(w){
     const exercises=w.exercises||[];
     return exercises.find(e=>(e.sets||[]).some(s=>s.type!=='warmup'&&!s.done))||[...exercises].reverse().find(e=>(e.sets||[]).some(s=>s.done&&s.type!=='warmup'))||exercises[0]||null;
   }
@@ -655,12 +669,21 @@ function saveMeasurementForm(){
     root.innerHTML=`<button type="button" class="live-workout-button" data-action="go-to-workout" aria-label="Перейти к активной тренировке"><span class="live-pulse"></span><span class="live-workout-copy"><b>${rest?'Отдых · '+formatSeconds(remaining):U.esc(exercise?.name||'Тренировка')}</b><small>${rest?'До конца отдыха':'Активная тренировка'} · ${elapsed}</small></span><span class="live-workout-time">${rest?formatSeconds(remaining):elapsed}</span></button>`;
   }
   function unlockRestAudio(){
-    try{const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)return;if(!restAudioContext)restAudioContext=new AudioContextClass();if(restAudioContext.state==='suspended')restAudioContext.resume().catch(()=>{});}catch(error){console.warn('Аудиосигнал отдыха недоступен:',error);}
+    try{
+      const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+      if(!AudioContextClass)return Promise.resolve(null);
+      if(!restAudioContext)restAudioContext=new AudioContextClass();
+      if(restAudioContext.state==='suspended')return restAudioContext.resume().catch(()=>restAudioContext);
+      return Promise.resolve(restAudioContext);
+    }catch(error){console.warn('Аудиосигнал отдыха недоступен:',error);return Promise.resolve(null);}
   }
-  function playRestEndSignal(){
+  async function playRestEndSignal(){
     if(!state?.settings?.restSound)return;
     try{
-      unlockRestAudio();const ctx=restAudioContext;if(!ctx||ctx.state!=='running')return;
+      const ctx=restAudioContext||await unlockRestAudio();
+      if(!ctx)return;
+      if(ctx.state==='suspended')await ctx.resume().catch(()=>{});
+      if(ctx.state!=='running')return;
       const start=ctx.currentTime+0.03;
       [880,1174].forEach((frequency,index)=>{
         const at=start+index*0.2,osc=ctx.createOscillator(),gain=ctx.createGain();
@@ -671,14 +694,14 @@ function saveMeasurementForm(){
     }catch(error){console.warn('Не удалось воспроизвести сигнал отдыха:',error);}
   }
 function paintClocks(){
+    syncRestTimer();
     const w=currentWorkout();if(!w){updateLiveWorkoutIndicator();return;}
     const elapsed=Math.max(0,Date.now()-new Date(w.startAt).getTime()),duration=U.fmtDuration(elapsed);
-    $('[data-workout-elapsed],[data-workout-duration]').forEach(x=>x.textContent=duration);
+    $$('[data-workout-elapsed],[data-workout-duration]').forEach(x=>x.textContent=duration);
     if(state.activeWorkout.rest){
       const rest=state.activeWorkout.rest,remaining=Math.max(0,Math.ceil((rest.until-Date.now())/1000));
       const time=$('[data-rest-time]');if(time)time.textContent=formatSeconds(remaining);
       const ring=$('.rest-ring .progress');if(ring)ring.style.strokeDashoffset=119*(1-Math.min(1,remaining/(rest.duration||1)));
-      if(remaining===0){state.activeWorkout.rest=null;state.activeWorkout.restFinishedAt=Date.now();playRestEndSignal();save(true);$('.rest-panel')?.remove();U.toast('Время отдыха завершено','success');}
     }
     updateLiveWorkoutIndicator();
   }
@@ -702,6 +725,8 @@ function paintClocks(){
     const id=ev.target.id;
     if(['exercise-form','block-form','program-form','add-session-form','measurement-form','body-goal-form','lift-goal-form','history-edit-form'].includes(id))ev.preventDefault();
   });
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncRestTimer();paintClocks();}});
+  window.addEventListener('focus',()=>{syncRestTimer();paintClocks();});
   if(window.matchMedia){const media=window.matchMedia('(prefers-color-scheme: dark)');media.addEventListener?.('change',()=>{if(state?.settings?.theme==='system')U.setTheme('system');});}
   window.addEventListener('beforeinstallprompt',ev=>{ev.preventDefault();installPrompt=ev;});
   window.addEventListener('appinstalled',()=>{installPrompt=null;U.toast('Приложение установлено','success');});
