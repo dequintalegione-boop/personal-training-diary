@@ -1,9 +1,9 @@
 /* Versioned cache-first service worker. Personal data stays in IndexedDB, outside Cache Storage. */
-const CACHE_NAME = 'personal-training-diary-v1.1.7';
+const CACHE_NAME = 'personal-training-diary-v1.1.8';
 const BASE = new URL('./', self.registration.scope);
 const PRECACHE = [
   './', './index.html', './manifest.webmanifest', './css/styles.css',
-  './js/db.js', './js/utils.js', './js/charts.js', './js/xlsx.js', './js/backup.js', './js/app.js?v=1.1.6',
+  './js/db.js', './js/utils.js', './js/charts.js', './js/xlsx.js', './js/backup.js', './js/app.js?v=1.1.8',
   './icons/icon-192.svg', './icons/icon-512.svg', './icons/icon-maskable.svg', './icons/apple-touch-icon.svg',
   './README.md', './COACH_AI_MANUAL.md', './coach-plan-template.json'
 ].map(path => new URL(path, BASE).href);
