@@ -284,3 +284,55 @@ button:disabled { opacity: .42; pointer-events: none; }
 
 /* The app shell must not draw a browser-like focus frame around the whole viewport. */
 #screen:focus, #screen:focus-visible, .app-shell:focus, .app-shell:focus-visible { outline: none !important; box-shadow: none !important; }
+
+/* Training interaction: prevent accidental browser zoom during repeated set entry. */
+html, body { touch-action: pan-y; }
+button, input, select, textarea, .btn, .icon-button, .tab-item { touch-action: manipulation; }
+
+/* Persistent live workout status, visible while navigating any app tab. */
+.live-workout-indicator {
+  position: fixed;
+  z-index: 28;
+  left: 50%;
+  bottom: calc(82px + var(--safe-bottom));
+  width: min(520px, calc(100% - 24px));
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.live-workout-indicator[hidden] { display: none !important; }
+.live-workout-button {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text);
+  box-shadow: 0 8px 28px rgba(10,20,35,.18);
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  text-align: left;
+  pointer-events: auto;
+}
+.live-pulse {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 5px var(--green-soft);
+  animation: live-pulse 1.8s ease-out infinite;
+}
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px var(--green-soft); }
+  50% { box-shadow: 0 0 0 7px var(--green-soft); }
+}
+.live-workout-copy { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.live-workout-copy b { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-workout-copy small { color: var(--muted); font-size: 10px; }
+.live-workout-time { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 780; font-size: 17px; white-space: nowrap; }
+@media (min-width: 700px) { .live-workout-indicator { bottom: 88px; } }
+@media (prefers-reduced-motion: reduce) { .live-pulse { animation: none; } }
