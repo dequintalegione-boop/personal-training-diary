@@ -13,7 +13,7 @@
       goals: { bodyWeight: null, lifts: [] }, records: [], achievements: [], xp: 0,
       activeWorkout: null,
       settings: {
-        theme: 'system', defaultStep: 2.5, restSeconds: 90, warmups: true,
+        theme: 'system', defaultStep: 2.5, restSeconds: 90, restSound: true, warmups: true,
         extraFields: true, weekStart: 1, oneRm: 'epley', showRpe: true,
         showNotes: true, defaultTags: true, weeklyTarget: 3
       },
