@@ -1,0 +1,48 @@
+name: Apply uploaded app update
+
+on:
+  push:
+    paths:
+      - ".github/update-data/part-*.b64"
+
+permissions:
+  contents: write
+
+jobs:
+  apply-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staged update
+        uses: actions/checkout@v4
+
+      - name: Apply archive and create clean application commit
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat .github/update-data/part-*.b64 > /tmp/ptd-update.tar.xz.b64
+          base64 --decode /tmp/ptd-update.tar.xz.b64 > /tmp/ptd-update.tar.xz
+
+          allowed='^(README\.md|css/styles\.css|icons/(apple-touch-icon|icon-192|icon-512|icon-maskable)\.svg|index\.html|js/(app|shell)\.js|manifest\.webmanifest|standalone\.html|sw\.js)$'
+          invalid="$(tar -tJf /tmp/ptd-update.tar.xz | grep -Ev "$allowed" || true)"
+          if [[ -n "$invalid" ]]; then
+            echo "Archive contains unexpected paths:"
+            echo "$invalid"
+            exit 1
+          fi
+
+          tar -xJf /tmp/ptd-update.tar.xz -C .
+
+          rm -rf .github/update-data
+          rm -f .github/workflows/apply-update.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No application changes detected."
+            exit 0
+          fi
+
+          git commit -m "Update training diary to Halo v2.0.0"
+          git push origin HEAD:main
