@@ -102,7 +102,7 @@
     syncRestTimer();
     U.setTheme(state.settings.theme);
     const navTab=['exercises','body','profile'].includes(tab)?'more':tab;
-    $$('.tab-item').forEach(b=>b.classList.toggle('is-active',b.dataset.tab===navTab));
+    $$('.tab-item,.sb-item[data-tab]').forEach(b=>b.classList.toggle('is-active',b.dataset.tab===(b.classList.contains('sb-item')?tab:navTab)));
     $$('[data-icon]').forEach(node=>{ node.innerHTML=U.icon(node.dataset.icon,20); });
     const renderers={home:renderHome,workout:renderWorkout,history:renderHistory,exercises:renderExercises,progress:renderProgress,body:renderBody,profile:renderProfile,more:renderMore};
     screen.classList.remove('is-entering');
@@ -110,6 +110,7 @@
     if(animate){void screen.offsetWidth;screen.classList.add('is-entering');}
     screen.focus({preventScroll:true});
     updateLiveWorkoutIndicator();
+    if(window.HaloShell){try{const wk=weekDatesConfigured(U.localDate());window.HaloShell.sync({weekDone:activeWorkouts().filter(w=>wk.includes(w.date)).length,weekTarget:Number(state.settings.weeklyTarget)||3,live:!!currentWorkout(),exercises:(state.exercises||[]).map(e=>e&&e.name).filter(Boolean)});}catch(e){console.warn(e);}}
   }
   function renderMore(){
     const rows=[
