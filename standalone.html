@@ -1824,9 +1824,9 @@ kbd { font-family: var(--mono); font-size: 10px; padding: 3px 6px; border-radius
       ${section('Данные и резервные копии')}
       <div class="card"><div class="row between"><div><b class="list-title">Резервная копия</b><div class="list-meta">Последняя копия: ${lastBackup}</div></div><span class="pill green">${U.icon('lock',13)} Локально</span></div><p class="body-copy">Все тренировки и замеры хранятся в браузере на этом устройстве. Создавайте резервную копию перед очисткой данных или сменой телефона.</p><div class="stack"><button class="btn secondary block" data-action="export-json">${U.icon('download')} Скачать JSON-копию</button><button class="btn secondary block" data-action="export-xlsx">${U.icon('download')} Экспортировать Excel (.xlsx)</button><button class="btn ghost block" data-action="import-backup">${U.icon('upload')} Импортировать копию или Excel</button><input id="backup-file" type="file" accept=".json,.xlsx,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="hidden"></div></div>
       ${section('Программа от ИИ-тренера')}
-      <div class="card"><div class="row between"><div><b class="list-title">Загрузить готовый план</b><div class="list-meta">JSON-файл с упражнениями, блоками и расписанием</div></div><span class="pill blue">Только добавление</span></div><p class="body-copy">Нейросеть-тренер может подготовить файл по инструкции. Импорт добавит новые упражнения и программы, сопоставит уже известные упражнения и пропустит повторно загруженные версии. Существующие тренировки, замеры и настройки не заменяются.</p><button class="btn primary block" data-action="import-coach-plan">${U.icon('upload')} Загрузить программу тренера</button><input id="coach-file" type="file" accept=".json,application/json" class="hidden"></div>
+      <div class="card"><div class="row between"><div><b class="list-title">Загрузить готовый план</b><div class="list-meta">JSON-файл с упражнениями, блоками и расписанием</div></div><span class="pill blue">Только добавление</span></div><p class="body-copy">Нейросеть-тренер может подготовить файл по инструкции. Импорт добавит новые упражнения и программы, сопоставит уже известные упражнения и пропустит повторно загруженные версии. Существующие тренировки, замеры и настройки не заменяются.</p><div class="grid-2" style="margin-top:12px"><button class="btn secondary" data-action="show-coach-prompt">${U.icon('clipboard')} Промт для ИИ</button><button class="btn primary" data-action="import-coach-plan">${U.icon('upload')} Загрузить программу тренера</button></div><input id="coach-file" type="file" accept=".json,application/json" class="hidden"></div>
       ${section('О приложении')}
-      <div class="card"><div class="row between"><div><b class="list-title">Тренировки</b><div class="list-meta">Версия 1.2.0 · автономный дневник</div></div><span class="pill blue">PWA</span></div><div class="divider"></div><div class="body-copy">Данные остаются на устройстве и не отправляются на сервер. Приложение не использует аналитику, трекеры, рекламу, внешние шрифты или сетевые API. Для установки PWA требуется открыть сайт по HTTPS и хотя бы один раз загрузить его онлайн.</div><div class="divider"></div><button class="btn danger block" data-action="clear-data">${U.icon('trash')} Очистить все данные</button></div>`;
+      <div class="card"><div class="row between"><div><b class="list-title">Тренировки</b><div class="list-meta">Версия 2.0.1 · автономный дневник</div></div><span class="pill blue">PWA</span></div><div class="divider"></div><div class="body-copy">Данные остаются на устройстве и не отправляются на сервер. Приложение не использует аналитику, трекеры, рекламу, внешние шрифты или сетевые API. Для установки PWA требуется открыть сайт по HTTPS и хотя бы один раз загрузить его онлайн.</div><div class="divider"></div><button class="btn danger block" data-action="clear-data">${U.icon('trash')} Очистить все данные</button></div>`;
   }
   function showAddExercise(){
     const items=state.exercises.filter(e=>!e.archived);if(!items.length){U.toast('Сначала добавьте упражнение в библиотеку');tab='exercises';render();return;}
@@ -1871,6 +1871,79 @@ kbd { font-family: var(--mono); font-size: 10px; padding: 3px 6px; border-radius
   function liftGoalForm(){if(!state.exercises.length){U.toast('Сначала создайте упражнения');return;}showModal('Цель по рабочему весу','Прогресс рассчитывается по максимальному записанному рабочему подходу.',`<form id="lift-goal-form"><div class="field"><label>Упражнение</label><select name="exerciseId" class="select" required>${state.exercises.filter(e=>!e.archived).map(e=>`<option value="${e.id}">${U.esc(e.name)}</option>`).join('')}</select></div><div class="form-grid" style="margin-top:12px"><div class="field"><label>Целевой вес, кг</label><input name="targetValue" class="input" type="number" min="0.1" step="0.5" required></div><div class="field"><label>Повторы</label><input name="targetReps" class="input" type="number" min="1" max="100" value="1"></div><div class="field full"><label>Срок</label><input name="deadline" class="input" type="date"></div></div></form>`,`<button class="btn secondary" data-action="close-modal">Отмена</button><button class="btn primary" data-action="submit-lift-goal">Сохранить цель</button>`);}
   function showImportPreview(file){
     Backup.readFile(file).then(incoming=>{Backup.validateState(incoming);importState=incoming;const c=Backup.counts(incoming);showModal('Предпросмотр импорта',`Файл: ${U.esc(file.name)} · данные ещё не изменены.`,`<div class="card soft"><div class="stack">${Object.entries(c).map(([k,v])=>`<div class="row between"><span class="small">${({workouts:'Тренировки',exercises:'Упражнения',blocks:'Блоки',programs:'Программы',measurements:'Замеры',records:'Рекорды',achievements:'Достижения'})[k]||k}</span><b>${v}</b></div>`).join('')}</div></div><div class="field" style="margin-top:14px"><label>Режим импорта</label><div class="stack"><label class="row"><input type="radio" name="import-mode" value="merge" checked style="accent-color:var(--accent)"><span class="small">Объединить с текущими данными (дубликаты по ID пропускаются)</span></label><label class="row"><input type="radio" name="import-mode" value="replace" style="accent-color:var(--accent)"><span class="small">Заменить все текущие данные данными из файла</span></label></div></div><div class="inline-notice" style="margin-top:12px">Перед заменой рекомендуется скачать текущую резервную копию.</div>`,`<button class="btn secondary" data-action="close-modal">Отмена</button><button class="btn primary" data-action="confirm-import">Импортировать</button>`);}).catch(e=>U.toast(e.message||'Не удалось прочитать файл','error'));
+  }
+  function coachPromptText(){
+    return [
+      'Ты — опытный тренер по силовым тренировкам. Составь персональную программу тренировок, которую можно без ручного исправления импортировать в приложение «Тренировки».',
+      '',
+      'СНАЧАЛА УТОЧНИ ДАННЫЕ',
+      'Используй сведения, которые я уже написал или приложил. Если важных данных не хватает, задай короткие уточняющие вопросы и дождись ответов, не придумывай профиль самостоятельно.',
+      'Уточни только то, что действительно необходимо: возраст; тренировочный опыт; основная цель; сколько раз в неделю и сколько минут я могу тренироваться; доступное оборудование; ограничения, травмы или движения, вызывающие боль; предпочтения по упражнениям. Текущий вес тела, рост и рабочие веса учитывай только если я их сообщил.',
+      'Если я приложил JSON-экспорт из дневника, изучи его разделы state.workouts, state.exercises, state.programs, state.measurements и state.goals. Учитывай только фактически завершённые тренировки с endAt. Не путай плановые значения с выполненными подходами. Используй историю для подбора реалистичных стартовых весов и нагрузки. Не требуй экспорт, если я хочу составить план без него.',
+      '',
+      'ПРИНЦИПЫ СОСТАВЛЕНИЯ ПЛАНА',
+      'Составь понятную программу с расписанием по дням, упражнениями в логичном порядке, подходами, диапазонами повторов, отдыхом и разминкой. Учитывай восстановление, тренировочный стаж, доступное оборудование и время занятия. Не добавляй лишний объём ради количества упражнений.',
+      'Не назначай стартовые веса наугад. Если надёжных данных нет, укажи startingWeightKg: null — приложение само подставит последние результаты из истории. Не выдумывай личные рекорды, выполненные тренировки, замеры или цели. При боли или медицинских ограничениях не ставь диагноз и не предлагай тренироваться через боль.',
+      '',
+      'СТРОГИЙ ФОРМАТ ФАЙЛА',
+      'Результат должен быть отдельным JSON-документом в UTF-8, расширение .json. Не возвращай полную резервную копию дневника.',
+      'Корневой объект обязан содержать:',
+      '- format: "personal-training-diary-coach-plan" (строго это значение);',
+      '- version: 1 (число);',
+      '- generatedAt: текущая дата и время в ISO 8601 UTC;',
+      '- coachNote: краткое объяснение логики программы;',
+      '- exercises: непустой массив общего каталога упражнений;',
+      '- blocks: массив блоков или пустой массив [];',
+      '- programs: непустой массив программ;',
+      '- liftGoals: массив целей или пустой массив [].',
+      '',
+      'Каждый объект exercises должен содержать:',
+      '- id: уникальный стабильный ASCII ID в нижнем регистре, например barbell-bench-press; используй только латинские буквы, цифры, дефис или подчёркивание;',
+      '- name: название упражнения на русском;',
+      '- muscles: массив мышечных групп;',
+      '- equipment: одно из значений Штанга, Гантели, Блок, Тренажёр, Собственный вес, Другое;',
+      '- stepKg: положительное число — шаг изменения веса в килограммах;',
+      '- restSeconds: неотрицательное целое число секунд;',
+      '- note и description: необязательные строки с техникой и пояснением.',
+      'Для muscles используй подходящие значения: Грудь, Спина, Плечи, Бицепс, Трицепс, Предплечья, Пресс, Квадрицепс, Бицепс бедра, Ягодицы, Икры, Трапеции, Поясница, Шея, Другое.',
+      '',
+      'Каждый объект programs должен содержать id, name, description и непустой массив days. ID программы должен быть уникальным. Для новой редакции существующей программы создавай новый ID версии.',
+      'Каждый день days должен содержать id, name, weekday и непустой массив exercises. weekday — целое число: 0 воскресенье, 1 понедельник, 2 вторник, 3 среда, 4 четверг, 5 пятница, 6 суббота; null означает, что день не назначен.',
+      'Каждый элемент day.exercises должен содержать:',
+      '- exerciseId: точное значение id из корневого массива exercises;',
+      '- sets: целое число от 1 до 20;',
+      '- repsMin: целое число от 1 до 100;',
+      '- repsMax: целое число не меньше repsMin и не больше 100;',
+      '- startingWeightKg: число или null;',
+      '- warmupSets: необязательное целое число от 0 до 5;',
+      '- note: необязательная строка.',
+      '',
+      'Каждый блок blocks должен содержать уникальные id, name, необязательный note и непустой массив items. Элементы items используют те же поля, что и упражнения в тренировочном дне: exerciseId, sets, repsMin, repsMax, startingWeightKg, warmupSets, note.',
+      'Каждая цель liftGoals, если она нужна и обоснована данными, должна ссылаться на существующий exerciseId и содержать targetWeightKg больше 0 и targetReps — целое число от 1. Допустимы необязательные id, deadline в формате ГГГГ-ММ-ДД и note. Не создавай цели без основания.',
+      '',
+      'КОНТРОЛЬ ПЕРЕД ОТВЕТОМ',
+      'Проверь, что все ID упражнений уникальны, все exerciseId ссылаются на существующие упражнения, у каждой программы есть хотя бы один день, а у каждого дня — хотя бы одно упражнение. Проверь диапазоны sets, repsMin, repsMax, warmupSets и корректность weekday.',
+      'Не добавляй в JSON поля тренировочной истории, завершённых тренировок, замеров или настроек приложения. Файл должен только добавлять упражнения, блоки, программы и обоснованные цели. Повторный импорт с тем же ID программы будет пропущен; для новой версии используй новый ID.',
+      '',
+      'ВЕРНИ РЕЗУЛЬТАТ',
+      'Если платформа умеет создавать файлы, создай файл coach-plan.json для скачивания. Иначе выведи один полный валидный JSON-объект без Markdown, комментариев и пояснений до или после него, чтобы я мог сохранить его в файл coach-plan.json.',
+      'Содержимое coach-plan.json должно быть только JSON, без пояснительного текста до или после объекта. Не утверждай, что импорт уже выполнен.'
+    ].join('\n');
+  }
+  function showCoachPrompt(){
+    const prompt=coachPromptText();
+    const content='<div class="field"><label for="coach-prompt-text">Готовый промт</label><textarea id="coach-prompt-text" class="input" rows="17" readonly spellcheck="false" style="min-height:340px;resize:vertical;font-size:12px;line-height:1.55;white-space:pre-wrap">'+U.esc(prompt)+'</textarea></div><div class="inline-notice" style="margin-top:12px">Для персонального плана можешь дополнительно приложить JSON-экспорт из дневника. В нём есть история тренировок и замеры — передавай его ИИ только если готов поделиться этими данными.</div>';
+    const buttons='<button type="button" class="btn secondary" data-action="close-modal">Закрыть</button><button type="button" class="btn primary" data-action="copy-coach-prompt">'+U.icon('clipboard',17)+' Скопировать промт</button>';
+    showModal('Промт для ИИ-тренера','Скопируй инструкцию и отправь её нейросети для создания совместимого файла программы.',content,buttons);
+  }
+  async function copyCoachPrompt(){
+    const field=$('#coach-prompt-text',modalRoot);
+    if(!field)return;
+    let copied=false;
+    try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(field.value);copied=true;}}catch(_){}
+    if(!copied){try{field.focus();field.select();copied=!!document.execCommand('copy');}catch(_){}}
+    if(copied)U.toast('Промт скопирован','success');
+    else{field.focus();field.select();U.toast('Текст выделен. Скопируй его вручную через Ctrl+C или меню браузера.','error');}
   }
   function showCoachImportPreview(file){
     Backup.readCoachPlan(file).then(incoming=>{
@@ -2051,6 +2124,8 @@ function saveMeasurementForm(){
       case 'export-json':exportJson();break;
       case 'export-xlsx':exportXlsx();break;
       case 'import-backup':$('#backup-file')?.click();break;
+      case 'show-coach-prompt':showCoachPrompt();break;
+      case 'copy-coach-prompt':copyCoachPrompt();break;
       case 'import-coach-plan':$('#coach-file')?.click();break;
       case 'confirm-coach-import':{if(!importState?.coachPlan)return;try{const result=Backup.mergeCoachPlan(state,importState);state=result.state;calculateAchievements();importState=null;save(true);closeModal();render();U.toast(`Добавлено: ${result.added.programs} программ, ${result.added.exercises} упражнений, ${result.added.blocks} блоков`,'success');}catch(e){U.toast(e.message||'Не удалось добавить программу','error');}break;}
       case 'confirm-import':{if(!importState)return;const mode=$('input[name="import-mode"]:checked',modalRoot)?.value||'merge';try{state=Backup.mergeState(state,importState,mode==='replace');importState=null;save(true);closeModal();render();U.toast('Импорт завершён','success');}catch(e){U.toast(e.message,'error');}break;}
