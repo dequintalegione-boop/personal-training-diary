@@ -1,7 +1,6 @@
 /*
  * GoatCounter site code.
- * Example: if your dashboard is https://my-training-diary.goatcounter.com,
- * set the value to 'my-training-diary'.
+ * Dashboard: https://dequintalegione.goatcounter.com
  * Leave empty to keep analytics disabled.
  */
-window.PTD_GOATCOUNTER_SITE = '';
+window.PTD_GOATCOUNTER_SITE = 'dequintalegione';
