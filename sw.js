@@ -1,9 +1,9 @@
 /* Versioned cache-first service worker. Personal data stays in IndexedDB, outside Cache Storage. */
-const CACHE_NAME = 'personal-training-diary-v2.0.1';
+const CACHE_NAME = 'personal-training-diary-v2.0.2';
 const BASE = new URL('./', self.registration.scope);
 const PRECACHE = [
   './', './index.html', './manifest.webmanifest', './css/styles.css',
-  './js/db.js', './js/utils.js', './js/charts.js', './js/xlsx.js', './js/backup.js', './js/shell.js?v=2.0.0', './js/app.js?v=2.0.1',
+  './js/db.js', './js/utils.js', './js/charts.js', './js/xlsx.js', './js/backup.js', './js/shell.js?v=2.0.0', './js/app.js?v=2.0.2', './js/analytics.js?v=2.0.2',
   './icons/icon-192.svg', './icons/icon-512.svg', './icons/icon-maskable.svg', './icons/apple-touch-icon.svg',
   './README.md', './COACH_AI_MANUAL.md', './coach-plan-template.json'
 ].map(path => new URL(path, BASE).href);
@@ -23,6 +23,17 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // Always fetch the small analytics config fresh: changing the site code
+  // should take effect without waiting for a Service Worker cache version bump.
+  if (url.pathname.endsWith('/js/analytics-config.js')) {
+    event.respondWith(
+      fetch(request, { cache: 'no-store' }).catch(() => new Response(
+        'window.PTD_GOATCOUNTER_SITE = "";',
+        { headers: { 'Content-Type': 'application/javascript; charset=utf-8' } }
+      ))
+    );
+    return;
+  }
   event.respondWith(caches.match(request).then(cached => {
     if (cached) return cached;
     return fetch(request).then(response => {
