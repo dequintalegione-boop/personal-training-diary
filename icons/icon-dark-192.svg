@@ -1,37 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#181a1f"/><stop offset=".48" stop-color="#08090c"/><stop offset="1" stop-color="#020304"/></linearGradient>
-  <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fbff" stop-opacity=".8"/><stop offset=".28" stop-color="#8993a2" stop-opacity=".18"/><stop offset=".72" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#b9c3d1" stop-opacity=".55"/></linearGradient>
-  <radialGradient id="glow" cx="50%" cy="47%" r="52%"><stop stop-color="#dce6f4" stop-opacity=".16"/><stop offset=".62" stop-color="#a8b4c5" stop-opacity=".045"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
-  <linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#343b46"/><stop offset=".12" stop-color="#e4e9ef"/><stop offset=".24" stop-color="#65707d"/><stop offset=".48" stop-color="#f3f6fa"/><stop offset=".66" stop-color="#66717f"/><stop offset=".86" stop-color="#e5eaf0"/><stop offset="1" stop-color="#333a45"/></linearGradient>
-  <linearGradient id="plate" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#161a20"/><stop offset=".16" stop-color="#707b89"/><stop offset=".29" stop-color="#e9eef4"/><stop offset=".43" stop-color="#697482"/><stop offset=".58" stop-color="#242a33"/><stop offset=".8" stop-color="#aab4c1"/><stop offset="1" stop-color="#252b34"/></linearGradient>
-  <linearGradient id="grip" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f8fafc"/><stop offset=".22" stop-color="#aeb8c5"/><stop offset=".5" stop-color="#424b58"/><stop offset=".78" stop-color="#aeb8c5"/><stop offset="1" stop-color="#303741"/></linearGradient>
-  <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".85"/><stop offset=".5" stop-color="#8d98a7" stop-opacity=".24"/><stop offset="1" stop-color="#fff" stop-opacity=".65"/></linearGradient>
-  <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="14"/></filter>
-  <pattern id="knurl" width="9" height="9" patternUnits="userSpaceOnUse"><path d="M-2 2L2 -2M0 9L9 0M7 11L11 7" stroke="#fff" stroke-opacity=".16" stroke-width="1"/></pattern>
-</defs>
-<rect width="512" height="512" rx="116" fill="url(#bg)"/>
-<rect width="512" height="512" rx="116" fill="url(#glow)"/>
-<rect x="2.5" y="2.5" width="507" height="507" rx="114" fill="none" stroke="url(#rim)" stroke-width="3"/>
-<path d="M28 140Q28 28 140 28H372" fill="none" stroke="#fff" stroke-opacity=".11" stroke-width="2"/>
-<ellipse cx="256" cy="370" rx="174" ry="25" fill="#cbd5e1" opacity=".16" filter="url(#shadow)"/>
-<!-- Straight, uniform handle: no center knob or thickened section -->
-<rect x="151" y="241" width="210" height="30" rx="15" fill="url(#grip)" stroke="#dce3ec" stroke-opacity=".58" stroke-width="1.5"/>
-<rect x="158" y="244" width="196" height="24" rx="12" fill="url(#knurl)" opacity=".55"/>
-<path d="M163 244H349" stroke="#fff" stroke-opacity=".66" stroke-width="1.5" stroke-linecap="round"/>
-<path d="M163 268H349" stroke="#111820" stroke-opacity=".8" stroke-width="1.5" stroke-linecap="round"/>
-<!-- Left collars and plates -->
-<path d="M160 214h24q9 0 9 10v64q0 10-9 10h-24q-8 0-8-10v-64q0-10 8-10z" fill="url(#steel)" stroke="#dce3ec" stroke-opacity=".58" stroke-width="1.5"/>
-<path d="M109 158h37q18 0 18 20v156q0 20-18 20h-37q-18 0-18-20V178q0-20 18-20z" fill="url(#plate)" stroke="#dfe6ef" stroke-opacity=".65" stroke-width="2"/>
-<path d="M112 170v172" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>
-<path d="M152 176v160" stroke="#05070a" stroke-opacity=".75" stroke-width="3"/>
-<path d="M166 182h14q13 0 13 16v116q0 16-13 16h-14q-12 0-12-16V198q0-16 12-16z" fill="url(#steel)" stroke="#dce3ec" stroke-opacity=".54" stroke-width="1.5"/>
-<!-- Right collars and plates -->
-<path d="M352 214h-24q-9 0-9 10v64q0 10 9 10h24q8 0 8-10v-64q0-10-8-10z" fill="url(#steel)" stroke="#dce3ec" stroke-opacity=".58" stroke-width="1.5"/>
-<path d="M403 158h-37q-18 0-18 20v156q0 20 18 20h37q18 0 18-20V178q0-20-18-20z" fill="url(#plate)" stroke="#dfe6ef" stroke-opacity=".65" stroke-width="2"/>
-<path d="M400 170v172" stroke="#fff" stroke-opacity=".55" stroke-width="2" stroke-linecap="round"/>
-<path d="M360 176v160" stroke="#05070a" stroke-opacity=".75" stroke-width="3"/>
-<path d="M346 182h-14q-13 0-13 16v116q0 16 13 16h14q12 0 12-16V198q0-16-12-16z" fill="url(#steel)" stroke="#dce3ec" stroke-opacity=".54" stroke-width="1.5"/>
-<path d="M105 162q-10 5-10 18v148q0 14 10 20" fill="none" stroke="#fff" stroke-opacity=".36" stroke-width="2"/>
-<path d="M407 162q10 5 10 18v148q0 14-10 20" fill="none" stroke="#fff" stroke-opacity=".36" stroke-width="2"/>
+  <rect width="512" height="512" fill="#000000"/>
+  <g fill="#FFFFFF">
+    <rect x="177" y="244" width="158" height="24" rx="8"/>
+    <rect x="156" y="184" width="47" height="144" rx="15"/>
+    <rect x="112" y="207" width="38" height="98" rx="12"/>
+    <rect x="90" y="235" width="16" height="42" rx="7"/>
+    <rect x="309" y="184" width="47" height="144" rx="15"/>
+    <rect x="362" y="207" width="38" height="98" rx="12"/>
+    <rect x="406" y="235" width="16" height="42" rx="7"/>
+  </g>
 </svg>
