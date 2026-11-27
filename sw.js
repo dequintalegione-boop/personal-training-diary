@@ -1,10 +1,10 @@
 /* Versioned cache-first service worker. Personal data stays in IndexedDB, outside Cache Storage. */
-const CACHE_NAME = 'personal-training-diary-v2.0.3';
+const CACHE_NAME = 'personal-training-diary-v2.0.4';
 const BASE = new URL('./', self.registration.scope);
 const PRECACHE = [
-  './', './index.html', './manifest.webmanifest?v=2.0.3', './css/styles.css',
+  './', './index.html', './manifest.webmanifest?v=2.0.4', './css/styles.css',
   './js/db.js', './js/utils.js', './js/charts.js', './js/xlsx.js', './js/backup.js', './js/shell.js?v=2.0.0', './js/app.js?v=2.0.2', './js/analytics.js?v=2.0.2',
-  './icons/icon-dark-192.svg?v=2.0.3', './icons/icon-dark-512.svg?v=2.0.3', './icons/icon-dark-maskable.svg?v=2.0.3', './icons/apple-touch-icon.svg?v=2.0.3',
+  './icons/icon-dark-192.svg?v=2.0.4', './icons/icon-dark-512.svg?v=2.0.4', './icons/icon-dark-maskable.svg?v=2.0.4', './icons/apple-touch-icon.svg?v=2.0.4',
   './README.md', './COACH_AI_MANUAL.md', './coach-plan-template.json'
 ].map(path => new URL(path, BASE).href);
 
